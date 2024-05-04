@@ -14,13 +14,13 @@ stylesheet = '''
         font-size: 15px;
     }
     QComboBox{
-        height: 30;
+        height: 25;
     }
     QLineEdit{
-        height: 30;
+        height: 25;
     }
     QPushButton{
-        height: 35;
+        height: 25;
     }
 '''
 

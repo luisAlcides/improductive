@@ -1,10 +1,9 @@
 import os
 
-from PyQt6 import uic
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QApplication, QVBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox, QFormLayout, QWidget, \
-    QTabWidget, QMainWindow, QHBoxLayout
+from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox, QFormLayout, QWidget, QTabWidget, \
+    QMainWindow, QTableWidget
 
 from view.AddHabitView import AddHabitView
 
@@ -71,26 +70,20 @@ class MainView(QMainWindow):
         button.clicked.connect(self.on_submit_clicked)
         layout.addWidget(button)
 
+        label_last_month = QLabel("Last Month")
+        table_last_month = QTableWidget()
+        layout.addWidget(label_last_month)
+        layout.addWidget(table_last_month)
 
-        label_goal_month = QLabel("Goal Month:")
-        label_goal_month_result = QLabel('0')
-        form_layout.addRow(label_goal_month, label_goal_month_result)
+        label_goal_month = QLabel("Goal Today")
+        table_goal = QTableWidget()
+        layout.addWidget(label_goal_month)
+        layout.addWidget(table_goal)
 
-        label_last_month = QLabel("Last Month:")
-        label_last_month_result = QLabel('0')
-        form_layout.addRow(label_last_month, label_last_month_result)
-
-        label_study_day = QLabel("Day:")
-        label_study_day_result = QLabel('0')
-        form_layout.addRow(label_study_day, label_study_day_result)
-
-        label_study_week = QLabel("Week:")
-        label_study_week_result = QLabel('0')
-        form_layout.addRow(label_study_week, label_study_week_result)
-
-        label_study_month = QLabel("Month:")
-        label_study_month_result = QLabel('0')
-        form_layout.addRow(label_study_month, label_study_month_result)
+        label_study_day = QLabel("Today")
+        table_study_day = QTableWidget()
+        layout.addWidget(label_study_day)
+        layout.addWidget(table_study_day)
 
         layout.addLayout(form_layout)
 
@@ -105,7 +98,6 @@ class MainView(QMainWindow):
     def on_submit_clicked(self):
         # Placeholder for submit button functionality
         pass
-
 
     def add_habit(self):
         self.add_habit_view = AddHabitView()
