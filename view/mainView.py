@@ -8,9 +8,15 @@ from PySide6.QtWidgets import (QVBoxLayout, QLabel, QPushButton, QLineEdit, QCom
 
 from view.addHabitView import AddHabitView
 from view.addGoalView import AddGoalView
+
 from connection import Connection
+
 from controller.cbFillController import CbFillController
+from controller.goalDataController import GoalDataController
+
 from PySide6.QtWidgets import QMenu
+
+from utils.func import add_to_table
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
 ui_file_path = os.path.join(script_directory, 'ui', 'mainView.ui')
@@ -32,6 +38,9 @@ class MainView(QMainWindow):
         
         self.combo_study_of.setContextMenuPolicy(Qt.CustomContextMenu)
         self.combo_study_of.customContextMenuRequested.connect(self.show_context_menu)
+        
+        
+
 
     def create_menu_bar(self):
         menubar = self.menuBar()
@@ -83,13 +92,19 @@ class MainView(QMainWindow):
         button.clicked.connect(self.on_submit_clicked)
         layout.addWidget(button)
 
-        label_last_month = QLabel("Last Month")
-        table_last_month = QTableWidget()
-        layout.addWidget(label_last_month)
-        layout.addWidget(table_last_month)
+        #label_last_month = QLabel("Last Month")
+        #table_last_month = QTableWidget()
+        #layout.addWidget(label_last_month)
+        #layout.addWidget(table_last_month)
 
         label_goal_month = QLabel("Goal Today")
         table_goal = QTableWidget()
+        table_goal.setColumnCount(3)
+        table_goal.setHorizontalHeaderLabels(['Habit', 'Goal', 'Month'])
+        
+        goals_controller = GoalDataController(table_goal)
+        goals_controller.load()
+
         layout.addWidget(label_goal_month)
         layout.addWidget(table_goal)
         
@@ -140,3 +155,5 @@ class MainView(QMainWindow):
     
     def add_goal(self):
         self.add_goal_view = AddGoalView()
+
+

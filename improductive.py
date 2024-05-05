@@ -1,4 +1,3 @@
-
 import os
 
 from PySide6.QtGui import QIcon
@@ -6,9 +5,9 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 
 from view.mainView import MainView  # Assuming this remains the same
+current_dir = os.path.dirname(os.path.abspath(__file__)) 
+icon_path = os.path.join(current_dir, 'view/icons/system.png') 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-icon_path = os.path.join(current_dir, 'view/icons/system.png')
 
 stylesheet = '''
     QLabel{
@@ -35,5 +34,5 @@ class ImProductive(QWidget):
         self.app.setWindowIcon(QIcon(icon_path))
         self.app.setStyleSheet(stylesheet)
         self.ui = MainView()
-        self.ui.show()
+        self.ui.showMaximized()
         self.app.exec_() 
