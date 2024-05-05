@@ -4,6 +4,8 @@ from utils.validation import validate_fields, clean_fields
 from utils.func import message
 
 from controller.addHabitController import AddHabitController
+
+
 from model.habitModel import HabitModel
 
 class AddHabitView(QMainWindow):
@@ -53,11 +55,13 @@ class AddHabitView(QMainWindow):
         
         name_habit = self.fields[0][0].text().split()
         name_habit = name_habit[0].title()
+        
+       
+                
         model = HabitModel(name_habit)
         controller = AddHabitController(model)
         if controller.was_successful():
             message('Habit add correctly')
             clean_fields(self.fields)
-            self.habit_added.emit()
         else:
             message('Error adding habit')

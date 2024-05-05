@@ -13,3 +13,11 @@ class CbFillController:
             res = cursor.execute(query)
             categories = res.fetchall()
             return categories
+        
+    
+    def load_months(self):
+        with self.con as cursor:
+            query = '''SELECT name FROM months'''
+            res = cursor.execute(query)
+            months = res.fetchall()
+            return months

@@ -6,7 +6,8 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QVBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox,
                                  QFormLayout, QWidget, QTabWidget, QMainWindow, QTableWidget)
 
-from view.addHabitView import AddHabitView  # Assuming this remains the same
+from view.addHabitView import AddHabitView
+from view.addGoalView import AddGoalView
 from connection import Connection
 from controller.cbFillController import CbFillController
 from PySide6.QtWidgets import QMenu
@@ -39,11 +40,14 @@ class MainView(QMainWindow):
 
         exit_action = QAction('Exit', self)
         add_habit_action = QAction('Add Habit', self)
+        add_goal_action = QAction('Add Goal', self)
         
         exit_action.triggered.connect(self.close)
         add_habit_action.triggered.connect(self.add_habit_category)
+        add_goal_action.triggered.connect(self.add_goal)
         
         file_menu.addAction(add_habit_action)
+        file_menu.addAction(add_goal_action)
         file_menu.addAction(exit_action)
 
     def create_tabs(self):
@@ -132,3 +136,7 @@ class MainView(QMainWindow):
 
     def add_habit_category(self):
         self.add_habit_view = AddHabitView()
+        
+    
+    def add_goal(self):
+        self.add_goal_view = AddGoalView()
