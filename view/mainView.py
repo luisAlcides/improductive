@@ -6,7 +6,9 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QVBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox,
                                  QFormLayout, QWidget, QTabWidget, QMainWindow, QTableWidget)
 
-from view.AddHabitView import AddHabitView  # Assuming this remains the same
+from view.addHabitView import AddHabitView  # Assuming this remains the same
+from connection import Connection
+from controller.cbFillController import CbFillController
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
 ui_file_path = os.path.join(script_directory, 'ui', 'mainView.ui')
@@ -14,9 +16,13 @@ ui_file_path = os.path.join(script_directory, 'ui', 'mainView.ui')
 class MainView(QMainWindow):
     def __init__(self):
         super().__init__()
+        
+        self.db = Connection()
+        self.db.setup_database()
+        
+        self.cb_category_habit = CbFillController().load_category_habit()
 
         self.setWindowTitle("ImProductive")
-        
         self.setGeometry(100, 100, 800, 600)
 
         self.create_menu_bar()
@@ -60,11 +66,9 @@ class MainView(QMainWindow):
         input_minutes_study = QLineEdit()
         layout.addWidget(input_minutes_study)
 
-        label_study_of = QLabel("Study of:")
-        layout.addWidget(label_study_of)
-
         combo_study_of = QComboBox()
-        combo_study_of.addItems(["Day", "Week", "Month"])
+        for category in self.cb_category_habit:
+            combo_study_of.addItem(category[0])
         layout.addWidget(combo_study_of)
 
         button = QPushButton("Add")
@@ -80,6 +84,9 @@ class MainView(QMainWindow):
         table_goal = QTableWidget()
         layout.addWidget(label_goal_month)
         layout.addWidget(table_goal)
+        
+        label_study_of = QLabel("Study of:")
+        layout.addWidget(label_study_of)
 
         label_study_day = QLabel("Today")
         table_study_day = QTableWidget()
