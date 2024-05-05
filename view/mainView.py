@@ -1,21 +1,22 @@
 import os
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QVBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox, QFormLayout, QWidget, QTabWidget, \
-    QMainWindow, QTableWidget
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import (QVBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox,
+                                 QFormLayout, QWidget, QTabWidget, QMainWindow, QTableWidget)
 
-from view.AddHabitView import AddHabitView
+from view.AddHabitView import AddHabitView  # Assuming this remains the same
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
 ui_file_path = os.path.join(script_directory, 'ui', 'mainView.ui')
-
 
 class MainView(QMainWindow):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("ImProductive")
+        
         self.setGeometry(100, 100, 800, 600)
 
         self.create_menu_bar()
@@ -49,7 +50,7 @@ class MainView(QMainWindow):
 
     def setup_tab1(self, tab):
         layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        layout.setAlignment(Qt.AlignHCenter)
 
         form_layout = QFormLayout()
 

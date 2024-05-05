@@ -1,13 +1,14 @@
+
 import os
 
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QWidget
 
-from view.mainView import MainView
+from view.mainView import MainView  # Assuming this remains the same
 
-script_directory = os.path.dirname(os.path.abspath(__file__))
-view_directory = os.path.join(script_directory, '', 'view')
-icon_system_path = os.path.join(view_directory, 'icons', 'system.png')
+current_dir = os.path.dirname(os.path.abspath(__file__))
+icon_path = os.path.join(current_dir, 'view/icons/system.png')
 
 stylesheet = '''
     QLabel{
@@ -24,11 +25,15 @@ stylesheet = '''
     }
 '''
 
-class ImProductive:
+script_directory = os.path.dirname(os.path.abspath(__file__))
+icon_path = os.path.join(script_directory, 'icons', 'system.png')
+
+
+class ImProductive(QWidget):
     def __init__(self):
         self.app = QApplication([])
-        self.app.setWindowIcon(QIcon(icon_system_path))
+        self.app.setWindowIcon(QIcon(icon_path))
         self.app.setStyleSheet(stylesheet)
         self.ui = MainView()
         self.ui.show()
-        self.app.exec()
+        self.app.exec_() 
