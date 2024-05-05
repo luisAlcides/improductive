@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QLabel, QPushButton, QLineEdit, QCom
 from view.addHabitView import AddHabitView  # Assuming this remains the same
 from connection import Connection
 from controller.cbFillController import CbFillController
+from PySide6.QtWidgets import QMenu
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
 ui_file_path = os.path.join(script_directory, 'ui', 'mainView.ui')
@@ -20,13 +21,16 @@ class MainView(QMainWindow):
         self.db = Connection()
         self.db.setup_database()
         
-        self.cb_category_habit = CbFillController().load_category_habit()
 
         self.setWindowTitle("ImProductive")
         self.setGeometry(100, 100, 800, 600)
 
         self.create_menu_bar()
         self.create_tabs()
+        self.cb_fill_category_habit_from_db()
+        
+        self.combo_study_of.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.combo_study_of.customContextMenuRequested.connect(self.show_context_menu)
 
     def create_menu_bar(self):
         menubar = self.menuBar()
@@ -34,10 +38,12 @@ class MainView(QMainWindow):
         file_menu = menubar.addMenu('File')
 
         exit_action = QAction('Exit', self)
-        self.add_habit_action = QAction('Add Habit')
+        add_habit_action = QAction('Add Habit', self)
+        
         exit_action.triggered.connect(self.close)
-        self.add_habit_action.triggered.connect(self.add_habit)
-        file_menu.addAction(self.add_habit_action)
+        add_habit_action.triggered.connect(self.add_habit_category)
+        
+        file_menu.addAction(add_habit_action)
         file_menu.addAction(exit_action)
 
     def create_tabs(self):
@@ -66,10 +72,8 @@ class MainView(QMainWindow):
         input_minutes_study = QLineEdit()
         layout.addWidget(input_minutes_study)
 
-        combo_study_of = QComboBox()
-        for category in self.cb_category_habit:
-            combo_study_of.addItem(category[0])
-        layout.addWidget(combo_study_of)
+        self.combo_study_of = QComboBox()
+        layout.addWidget(self.combo_study_of)
 
         button = QPushButton("Add")
         button.clicked.connect(self.on_submit_clicked)
@@ -102,11 +106,29 @@ class MainView(QMainWindow):
         label_tab2 = QLabel("This is Tab 2")
         layout.addWidget(label_tab2)
         tab.setLayout(layout)
+        
+        
+    def cb_fill_category_habit(self):
+        self.combo_study_of.clear()
+        for category in self.cb_category_habit:
+            self.combo_study_of.addItem(category[0])
+            
+    def cb_fill_category_habit_from_db(self):
+        self.cb_category_habit = CbFillController().load_category_habit()
+        self.cb_fill_category_habit()
+
+
+    
+    def show_context_menu(self, position):
+        menu = QMenu()
+        update_action = menu.addAction('Actualizar')
+        action = menu.exec_(self.combo_study_of.mapToGlobal(position))
+        if action == update_action:
+            self.cb_fill_category_habit_from_db()
 
     def on_submit_clicked(self):
         # Placeholder for submit button functionality
         pass
 
-    def add_habit(self):
+    def add_habit_category(self):
         self.add_habit_view = AddHabitView()
-        return self.add_habit_view

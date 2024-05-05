@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
 from utils.validation import validate_fields, clean_fields
 from utils.func import message
@@ -8,6 +8,7 @@ from model.habitModel import HabitModel
 
 class AddHabitView(QMainWindow):
     TITLE_WINDOW = 'Add Habit'
+    habit_added = Signal()
 
     def __init__(self):
         super().__init__()
@@ -57,5 +58,6 @@ class AddHabitView(QMainWindow):
         if controller.was_successful():
             message('Habit add correctly')
             clean_fields(self.fields)
+            self.habit_added.emit()
         else:
             message('Error adding habit')
