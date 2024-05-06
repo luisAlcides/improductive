@@ -21,7 +21,7 @@ from view.chartView import ChartView
 
 from PySide6.QtWidgets import QMenu
 
-from utils.func import add_to_table, clean_fields
+from utils.func import  clean_fields
 from utils.validation import validate_fields
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +39,7 @@ class MainView(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
         
         self.study_day = AddHabitTimeController()
+        self.goals_controller = GoalDataController()
         
 
         self.create_menu_bar()
@@ -161,8 +162,8 @@ class MainView(QMainWindow):
         self.cb_fill_category_habit()
     
     def load_goals(self, table):
-        goals_controller = GoalDataController(table) 
-        goals_controller.load()                                
+        self.goals_controller.load_goals(table)
+         
     
     def show_context_menu(self, position):
         menu = QMenu()

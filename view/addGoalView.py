@@ -3,10 +3,8 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QLineEd
 from utils.validation import validate_fields
 from utils.func import message, clean_fields
 
-from controller.addGoalController import AddGoalController
 from controller.cbFillController import CbFillController
-
-from model.goalModel import GoalModel
+from controller.goalDataController import GoalDataController
 
 
 from PySide6.QtWidgets import QComboBox
@@ -53,7 +51,7 @@ class AddGoalView(QMainWindow):
 
         # buttons
         btn_add = QPushButton('Add')
-        btn_add.clicked.connect(self.add_habit)
+        btn_add.clicked.connect(self.add_goal)
         
         self.fields = [[input_goal, 'number', label_goal],
                        [cb_habit, 'cb', label_habit],
@@ -78,7 +76,7 @@ class AddGoalView(QMainWindow):
         for month in months:
             cb.addItem(month[0])
 
-    def add_habit(self):
+    def add_goal(self):
         if not validate_fields(self.fields):
             return 
         
@@ -88,8 +86,8 @@ class AddGoalView(QMainWindow):
         cb_habit = self.fields[1][0].currentText()
         cb_month = self.fields[2][0].currentText()
                 
-        model = GoalModel(input_goal, cb_habit, cb_month)
-        controller = AddGoalController(model)
+        controller = GoalDataController()
+        controller.add_goal(input_goal, cb_habit, cb_month)
         
         if controller.was_successful():
             message('Goal add corrently')
