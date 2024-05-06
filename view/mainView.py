@@ -3,7 +3,7 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (QVBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox,
                                  QFormLayout, QWidget, QTabWidget, QMainWindow, QTableWidget)
 
 from view.addHabitView import AddHabitView
@@ -63,6 +63,7 @@ class MainView(QMainWindow):
         tab_widget = QTabWidget()
 
         tab1 = QWidget()
+        tab1.customContextMenuRequested.connect(self.show_context_menu)
         self.setup_tab1(tab1)
 
         tab2 = QWidget()
@@ -78,7 +79,7 @@ class MainView(QMainWindow):
         layout.setAlignment(Qt.AlignHCenter)
 
         form_layout = QFormLayout()
-
+       
         label_minutes_study = QLabel('Minutes study today')
         layout.addWidget(label_minutes_study)
 
@@ -88,9 +89,16 @@ class MainView(QMainWindow):
         self.combo_study_of = QComboBox()
         layout.addWidget(self.combo_study_of)
 
+        horizontal_layout = QHBoxLayout()
         button = QPushButton("Add")
         button.clicked.connect(self.on_submit_clicked)
-        layout.addWidget(button)
+        horizontal_layout.addWidget(button)
+
+        btn_update = QPushButton('Update')
+        btn_update.clicked.connect(self.refresh)
+        horizontal_layout.addWidget(btn_update)
+
+        layout.addLayout(horizontal_layout)
 
         #label_last_month = QLabel("Last Month")
         #table_last_month = QTableWidget()
@@ -98,15 +106,15 @@ class MainView(QMainWindow):
         #layout.addWidget(table_last_month)
 
         label_goal_month = QLabel("Goal Today")
-        table_goal = QTableWidget()
-        table_goal.setColumnCount(3)
-        table_goal.setHorizontalHeaderLabels(['Habit', 'Goal', 'Month'])
+        self.table_goal = QTableWidget()
+        self.table_goal.setColumnCount(3)
+        self.table_goal.setHorizontalHeaderLabels(['Habit', 'Goal', 'Month'])
         
-        goals_controller = GoalDataController(table_goal)
-        goals_controller.load()
+        self.load_goals(self.table_goal) 
+        
 
         layout.addWidget(label_goal_month)
-        layout.addWidget(table_goal)
+        layout.addWidget(self.table_goal)
         
         label_study_of = QLabel("Study of:")
         layout.addWidget(label_study_of)
@@ -135,16 +143,18 @@ class MainView(QMainWindow):
     def cb_fill_category_habit_from_db(self):
         self.cb_category_habit = CbFillController().load_category_habit()
         self.cb_fill_category_habit()
-
-
+    
+    def load_goals(self, table):
+        goals_controller = GoalDataController(table) 
+        goals_controller.load()                                
     
     def show_context_menu(self, position):
         menu = QMenu()
         update_action = menu.addAction('Actualizar')
         action = menu.exec_(self.combo_study_of.mapToGlobal(position))
-        if action == update_action:
-            self.cb_fill_category_habit_from_db()
-
+        #if action == update_action:
+        self.cb_fill_category_habit_from_db()
+        self.refresh()
     def on_submit_clicked(self):
         # Placeholder for submit button functionality
         pass
@@ -156,4 +166,7 @@ class MainView(QMainWindow):
     def add_goal(self):
         self.add_goal_view = AddGoalView()
 
-
+    def refresh(self):
+        self.cb_fill_category_habit_from_db()
+        self.table_goal.setRowCount(0)
+        self.load_goals(self.table_goal)

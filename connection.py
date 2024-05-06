@@ -28,6 +28,7 @@ SQL_CREATE_TABLE_GOAL = '''CREATE TABLE IF NOT EXISTS goal(
     goal REAL,
     category_id INTEGER,
     month_id INTEGER,
+    current_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES category_habits(id),
     FOREIGN KEY (month_id) REFERENCES months(id)
     
