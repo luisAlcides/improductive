@@ -189,20 +189,7 @@ def validate_fields(fields):
     except ValueError as e:
         print(f'Error de valor: {e}')
     except Exception as e:
-        print(f'Error inesperado: {e}')
+        print(f'Error inesperado: {e}, {field[2]}')
 
     return True
 
-
-def clean_fields(fields):
-    for field in fields:
-        if type(field[0]) == QLineEdit:
-            field[0].setText('')
-        if type(field[0]) == QTextEdit:
-            field[0].setPlainText('')
-        if type(field[0]) == QComboBox:
-            field[0].setCurrentIndex(-1)
-        if type(field[0]) == QSpinBox:
-            field[0].setValue(0)
-        if type(field[0]) == QDoubleSpinBox:
-            field[0].setValue(0.0)

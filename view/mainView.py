@@ -13,10 +13,14 @@ from connection import Connection
 
 from controller.cbFillController import CbFillController
 from controller.goalDataController import GoalDataController
+from controller.addHabitTimeController import AddHabitTimeController
+
+from model.addHabitTimeModel import AddHabitTimeModel
 
 from PySide6.QtWidgets import QMenu
 
-from utils.func import add_to_table
+from utils.func import add_to_table, clean_fields
+from utils.validation import validate_fields
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
 ui_file_path = os.path.join(script_directory, 'ui', 'mainView.ui')
@@ -31,6 +35,9 @@ class MainView(QMainWindow):
 
         self.setWindowTitle("ImProductive")
         self.setGeometry(100, 100, 800, 600)
+        
+        self.study_day = AddHabitTimeController()
+        
 
         self.create_menu_bar()
         self.create_tabs()
@@ -80,19 +87,22 @@ class MainView(QMainWindow):
 
         form_layout = QFormLayout()
        
-        label_minutes_study = QLabel('Minutes study today')
-        layout.addWidget(label_minutes_study)
+        self.label_minutes_study = QLabel('Minutes study today')
+        layout.addWidget(self.label_minutes_study)
 
-        input_minutes_study = QLineEdit()
-        layout.addWidget(input_minutes_study)
+        self.input_minutes_study = QLineEdit()
+        layout.addWidget(self.input_minutes_study)
+        
+        self.label_cb_study_of = QLabel('Habit')
+        layout.addWidget(self.label_cb_study_of)
 
         self.combo_study_of = QComboBox()
         layout.addWidget(self.combo_study_of)
 
         horizontal_layout = QHBoxLayout()
-        button = QPushButton("Add")
-        button.clicked.connect(self.on_submit_clicked)
-        horizontal_layout.addWidget(button)
+        btn_add = QPushButton("Add")
+        btn_add.clicked.connect(self.add_habit_time)
+        horizontal_layout.addWidget(btn_add)
 
         btn_update = QPushButton('Update')
         btn_update.clicked.connect(self.refresh)
@@ -120,9 +130,12 @@ class MainView(QMainWindow):
         layout.addWidget(label_study_of)
 
         label_study_day = QLabel("Today")
-        table_study_day = QTableWidget()
+        self.table_study_day = QTableWidget()
+        self.table_study_day.setColumnCount(3)
+        self.table_study_day.setHorizontalHeaderLabels(['Habit', 'Time', 'Date'])
+        self.study_day.load(self.table_study_day)
         layout.addWidget(label_study_day)
-        layout.addWidget(table_study_day)
+        layout.addWidget(self.table_study_day)
 
         layout.addLayout(form_layout)
 
@@ -155,9 +168,23 @@ class MainView(QMainWindow):
         #if action == update_action:
         self.cb_fill_category_habit_from_db()
         self.refresh()
-    def on_submit_clicked(self):
-        # Placeholder for submit button functionality
-        pass
+    
+    def add_habit_time(self):
+        fields = [[self.input_minutes_study, 'number', self.label_minutes_study],
+                  [self.combo_study_of, 'cb', self.label_cb_study_of]]
+        
+        if not validate_fields(fields):
+            return 
+        
+        name_habit = self.combo_study_of.currentText()
+        input_text = self.input_minutes_study.text().strip()
+        study_time = float(input_text)
+        
+        model = AddHabitTimeModel(name_habit, study_time)
+        self.study_day.add_habit(model)
+        clean_fields(fields)
+        
+        
 
     def add_habit_category(self):
         self.add_habit_view = AddHabitView()
@@ -170,3 +197,5 @@ class MainView(QMainWindow):
         self.cb_fill_category_habit_from_db()
         self.table_goal.setRowCount(0)
         self.load_goals(self.table_goal)
+        self.table_study_day.setRowCount(0)
+        self.study_day.load(self.table_study_day)

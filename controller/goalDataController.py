@@ -14,7 +14,7 @@ class GoalDataController:
             sql_query = """SELECT c.name, 
                         g.goal, 
                         m.name,
-                        strftime('%Y', g.current_time) as year
+                        strftime('%Y', g.date_current) as year
                         FROM goal g 
                         JOIN category_habits c 
                         ON g.category_id = c.id
@@ -25,16 +25,16 @@ class GoalDataController:
             with self.con as cursor:
                 cursor.execute(sql_query)
                 res = cursor.fetchall()
-                self.data = []
+                data = []
                 for habit, goal, month, year in res:
                     div = self.day_month(month, year)
                     goal_calc = float(goal)/div
                     format_goal = "{:.2f}".format(goal_calc)
-                    self.data.append((habit, format_goal, month))
+                    data.append((habit, format_goal, month))
                     
 
                     
-                for dat in self.data:
+                for dat in data:
                     add_to_table(self.table, dat)
         except Exception as e:
             print('Error loading goals: ', e)

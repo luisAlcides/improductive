@@ -1,4 +1,6 @@
 import sqlite3
+import datetime
+
 from connection import Connection
 
 
@@ -7,12 +9,14 @@ class AddGoalController:
         self.success = False
         self.con = Connection()
         sql_insert = '''
-            INSERT INTO goal(goal, category_id, month_id)
-            VALUES(?, ?, ?)
+            INSERT INTO goal(goal, category_id, month_id, date_current)
+            VALUES(?, ?, ?, ?)
         '''
         category_id, month_id = self.get_ids(goals)
         
-        values = (goals.goal, category_id, month_id)
+        current_time = datetime.datetime.now().strftime('%d-%m-%y')
+        
+        values = (goals.goal, category_id, month_id, current_time)
         
         with self.con as cursor:
             try:

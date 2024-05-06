@@ -1,4 +1,6 @@
 import sqlite3 
+import datetime
+
 from connection import Connection
 
 
@@ -7,10 +9,11 @@ class AddHabitController:
         self.success = False
         con = Connection()
         sql_insert = '''
-            INSERT INTO category_habits(name)
-            VALUES(?)
+            INSERT INTO category_habits(name, date_current)
+            VALUES(?, ?)
         '''
-        values = (category.name_habit,)
+        current_time = datetime.datetime.now().strftime('%d-%m-%y')
+        values = (category.name_habit,current_time)
         
         with con as cursor:
             try:

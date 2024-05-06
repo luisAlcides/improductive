@@ -3,19 +3,19 @@ import sqlite3
 SQL_CREATE_TABLE_CATEGORY_HABIT = '''CREATE TABLE IF NOT EXISTS category_habits(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    created DATETIME DEFAULT CURRENT_TIMESTAMP 
+    date_current DATETIME 
     )
 '''
 
 SQL_CREATE_TABLE_HABIT = '''CREATE TABLE IF NOT EXISTS habit(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    category_id INTEGER,
     study_time REAL,
+    category_id INTEGER,
+    date_current DATETIME,
     FOREIGN KEY (category_id) REFERENCES category_habits(id)
     
-    )'''
-
+    )
+    '''
 
 SQL_CREATE_TABLE_MONTHS = '''CREATE TABLE IF NOT EXISTS months(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +28,7 @@ SQL_CREATE_TABLE_GOAL = '''CREATE TABLE IF NOT EXISTS goal(
     goal REAL,
     category_id INTEGER,
     month_id INTEGER,
-    current_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    date_current DATETIME,
     FOREIGN KEY (category_id) REFERENCES category_habits(id),
     FOREIGN KEY (month_id) REFERENCES months(id)
     

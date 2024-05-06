@@ -1,7 +1,7 @@
 import hashlib
 
 from PySide6 import QtWidgets
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QLineEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox
 
 from connection import Connection
 
@@ -85,3 +85,19 @@ def message_delete():
 def limit_Double_spin(object):
     object.setMinimum(0)
     object.setMaximum(9999999.99)
+
+
+
+
+def clean_fields(fields):
+    for field in fields:
+        if type(field[0]) == QLineEdit:
+            field[0].setText('')
+        if type(field[0]) == QTextEdit:
+            field[0].setPlainText('')
+        if type(field[0]) == QComboBox:
+            field[0].setCurrentIndex(-1)
+        if type(field[0]) == QSpinBox:
+            field[0].setValue(0)
+        if type(field[0]) == QDoubleSpinBox:
+            field[0].setValue(0.0)
