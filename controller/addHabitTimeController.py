@@ -26,26 +26,43 @@ class AddHabitTimeController:
             category_id = self.get_category_id(model.name_habit)
             study_time = float(model.study_time)/60
             current_time = datetime.datetime.now().strftime('%d-%m-%y')
-            print(current_time)
+            
             
             with self.con as cursor:
-                sql_insert = '''INSERT INTO habit(study_time, category_id, date_current) VALUES(?, ?,?)'''
-                values = (study_time, category_id, current_time)
-                cursor.execute(sql_insert, values)
-                self.success = True
+                sql_check = '''SELECT * FROM habit WHERE category_id = ? AND date_current = ?'''
+                cursor.execute(sql_check, (category_id, current_time))
+                existeing_habit = cursor.fetchone()
+            
+            if existeing_habit:
+                existeing_habit_id = existeing_habit[0]
+                
+                with self.con as cursor:
+                    sql_update = '''UPDATE habit SET study_time = study_time + ? WHERE id = ?'''
+                    values = (study_time, existeing_habit_id)
+                    cursor.execute(sql_update, values)
+                    self.success = True
+            else:
+                with self.con as cursor:
+                    sql_insert = '''INSERT INTO habit(study_time, category_id, date_current) VALUES(?, ?,?)'''
+                    values = (study_time, category_id, current_time)
+                    cursor.execute(sql_insert, values)
+                    self.success = True
         except sqlite3.IntegrityError as e:
             print('Error adding time habit:', e)
         except Exception as e:
             print('Error adding time habit:', e)
 
     def load(self, table):
+        current_time = datetime.datetime.now().strftime('%d-%m-%y')
         try:
             with self.con as cursor:
                 sql ='''SELECT category_habits.name, habit.study_time, habit.date_current
                 FROM habit
                 JOIN category_habits ON habit.category_id = category_habits.id
+                WHERE habit.date_current = ?
                 '''
-                cursor.execute(sql)
+                values = (current_time,)
+                cursor.execute(sql, values)
                 habits = cursor.fetchall()
                 data = []
                 for habit_name, study_time, date_current in habits:

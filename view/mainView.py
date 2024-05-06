@@ -17,6 +17,8 @@ from controller.addHabitTimeController import AddHabitTimeController
 
 from model.addHabitTimeModel import AddHabitTimeModel
 
+from view.chartView import ChartView
+
 from PySide6.QtWidgets import QMenu
 
 from utils.func import add_to_table, clean_fields
@@ -143,8 +145,9 @@ class MainView(QMainWindow):
 
     def setup_tab2(self, tab):
         layout = QVBoxLayout()
-        label_tab2 = QLabel("This is Tab 2")
-        layout.addWidget(label_tab2)
+        
+        self.chart_view = ChartView()
+        layout.addWidget(self.chart_view)
         tab.setLayout(layout)
         
         
