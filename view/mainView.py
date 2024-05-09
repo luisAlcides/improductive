@@ -162,7 +162,7 @@ class MainView(QMainWindow):
         self.cb_fill_category_habit()
     
     def load_goals(self, table):
-        self.goals_controller.load_goals(table)
+        self.goals_controller.load_goals(table, 'May')
          
     
     def show_context_menu(self, position):

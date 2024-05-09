@@ -49,9 +49,19 @@ class GoalModel:
             month_id = cursor.fetchone()
         
         return (category_id[0], month_id[0])
-    
-    def load(self, table):
-        current_time = datetime.datetime.now().strftime('%m')
+
+    def get_id_month(self, month):
+        sql_month = 'SELECT id FROM months WHERE name = ?'
+
+        with self.con as cursor:
+            cursor.execute(sql_month, (month,))
+            month_id = cursor.fetchone()
+
+        return month_id[0]
+
+    def load(self, table, month):
+        month_id = self.get_id_month(month)
+        print(month_id)
         try:
             sql_query = """SELECT c.name, 
                         g.goal, 
@@ -62,12 +72,13 @@ class GoalModel:
                         ON g.category_id = c.id
                         JOIN months m
                         ON g.month_id = m.id 
-                        WHERE strftime('%m', g.date_current)=?
+                        WHERE g.month_id=?
                         """
 
             with self.con as cursor:
-                cursor.execute(sql_query,(current_time,))
+                cursor.execute(sql_query,(month_id,))
                 res = cursor.fetchall()
+                print(res)
                 data = []
                 for habit, goal, month, year in res:
                     div = self.day_month(month, year)
