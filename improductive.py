@@ -5,11 +5,12 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 
 from view.mainView import MainView  # Assuming this remains the same
-current_dir = os.path.dirname(os.path.abspath(__file__)) 
-icon_path = os.path.join(current_dir, 'view/icons/system.png') 
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+icon_path = os.path.join(current_dir, "view/icons/system.png")
 
 
-stylesheet = '''
+stylesheet = """
     QLabel{
         font-size: 15px;
     }
@@ -22,10 +23,11 @@ stylesheet = '''
     QPushButton{
         height: 25;
     }
-'''
+"""
+
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
-icon_path = os.path.join(script_directory, 'icons', 'system.png')
+icon_path = os.path.join(script_directory, "icons", "system.png")
 
 
 class ImProductive(QWidget):
@@ -35,4 +37,4 @@ class ImProductive(QWidget):
         self.app.setStyleSheet(stylesheet)
         self.ui = MainView()
         self.ui.showMaximized()
-        self.app.exec_() 
+        self.app.exec_()

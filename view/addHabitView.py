@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QMainWindow, QWidget,QLabel, QLineEdit, QPushButton, QVBoxLayout
 from utils.validation import validate_fields
 from utils.func import message, clean_fields
 

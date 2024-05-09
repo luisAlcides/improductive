@@ -11,26 +11,31 @@ class GoalModel:
         
     
     def add_goal(self, goal, category, month):
-        sql_insert = '''
-            INSERT INTO goal(goal, category_id, month_id, date_current)
-            VALUES(?, ?, ?, ?)
-        '''
         category_id, month_id = self.get_ids(category, month)
-        
         current_time = datetime.datetime.now().strftime('%d-%m-%y')
-        
         values = (goal, category_id, month_id, current_time)
         
-        with self.con as cursor:
-            try:
-                cursor.execute(sql_insert, values)
+        try:
+            with self.con as cursor:
+                sql_check = '''SELECT * FROM goal WHERE category_id = ? AND month_id = ?'''
+                cursor.execute(sql_check, (category_id, month_id,))
+                existing_goal = cursor.fetchone()
+
+                if existing_goal:
+                    goal_id = existing_goal[0]
+                    sql_update = '''UPDATE goal SET goal = ?, WHERE id'''
+                    cursor.execute(sql_update,(goal, goal_id))
+                else:
+                    sql_insert = '''INSERT INTO goal(goal, category_id, month_id, date_current) VALUES(?, ?,?,?)'''
+                    cursor.execute(sql_insert, values)
+
                 self.success = True
-            except sqlite3.IntegrityError as e:
-                print('Error adding category:', e)
-                self.success = False
-            except Exception as e:
-                print('Error adding category:', e)
-                self.success = False
+        except sqlite3.IntegrityError as e:
+            print('Error adding category:', e)
+            self.success = False
+        except Exception as e:
+            print('Error adding category:', e)
+            self.success = False
         
     
     def get_ids(self, category, month):
@@ -46,6 +51,7 @@ class GoalModel:
         return (category_id[0], month_id[0])
     
     def load(self, table):
+        current_time = datetime.datetime.now().strftime('%m')
         try:
             sql_query = """SELECT c.name, 
                         g.goal, 
@@ -55,11 +61,12 @@ class GoalModel:
                         JOIN category_habits c 
                         ON g.category_id = c.id
                         JOIN months m
-                        ON g.month_id = m.id
+                        ON g.month_id = m.id 
+                        WHERE strftime('%m', g.date_current)=?
                         """
 
             with self.con as cursor:
-                cursor.execute(sql_query)
+                cursor.execute(sql_query,(current_time,))
                 res = cursor.fetchall()
                 data = []
                 for habit, goal, month, year in res:
