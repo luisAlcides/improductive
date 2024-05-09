@@ -17,11 +17,11 @@ from controller.addHabitTimeController import AddHabitTimeController
 
 from model.addHabitTimeModel import AddHabitTimeModel
 
-from view.chartView import ChartView
+from view.chartViewGoal import ChartViewDay
 
 from PySide6.QtWidgets import QMenu
 
-from utils.func import  clean_fields
+from utils.func import  clean_fields, data_of_table_all
 from utils.validation import validate_fields
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -102,16 +102,16 @@ class MainView(QMainWindow):
         self.combo_study_of = QComboBox()
         layout.addWidget(self.combo_study_of)
 
-        horizontal_layout = QHBoxLayout()
+        ly_ht_btn = QHBoxLayout()
         btn_add = QPushButton("Add")
         btn_add.clicked.connect(self.add_habit_time)
-        horizontal_layout.addWidget(btn_add)
+        ly_ht_btn.addWidget(btn_add)
 
         btn_update = QPushButton('Update')
         btn_update.clicked.connect(self.refresh)
-        horizontal_layout.addWidget(btn_update)
+        ly_ht_btn.addWidget(btn_update)
 
-        layout.addLayout(horizontal_layout)
+        layout.addLayout(ly_ht_btn)
 
         #label_last_month = QLabel("Last Month")
         #table_last_month = QTableWidget()
@@ -119,27 +119,47 @@ class MainView(QMainWindow):
         #layout.addWidget(table_last_month)
 
         label_goal_month = QLabel("Goal Today")
+        ly_ht_table_chart = QHBoxLayout()
+        ly_vt_table = QVBoxLayout()
+        ly_ht_table_chart.addLayout(ly_vt_table)
+
         self.table_goal = QTableWidget()
         self.table_goal.setColumnCount(3)
         self.table_goal.setHorizontalHeaderLabels(['Habit', 'Goal', 'Month'])
         
         self.load_goals(self.table_goal) 
+       
+
+       
+        
         
 
-        layout.addWidget(label_goal_month)
-        layout.addWidget(self.table_goal)
-        
-        label_study_of = QLabel("Study of:")
-        layout.addWidget(label_study_of)
+        ly_vt_table.addWidget(label_goal_month)
+        ly_vt_table.addWidget(self.table_goal)
 
-        label_study_day = QLabel("Today")
+
+        label_study_of = QLabel("Today Study")
+        ly_vt_table.addWidget(label_study_of)
+
         self.table_study_day = QTableWidget()
         self.table_study_day.setColumnCount(3)
         self.table_study_day.setHorizontalHeaderLabels(['Habit', 'Time', 'Date'])
         self.study_day.load(self.table_study_day)
-        layout.addWidget(label_study_day)
-        layout.addWidget(self.table_study_day)
+        
+        ly_vt_table.addWidget(self.table_study_day)
 
+
+        if self.table_goal and self.table_study_day is not None:
+            table_goal_data = data_of_table_all(self.table_goal)
+            table_study_day_data = data_of_table_all(self.table_study_day)
+
+            self.chart_view_goal = ChartViewDay(table_goal_data, table_study_day_data)
+        else:
+            self.chart_view_goal = ChartViewDay()
+        
+        
+        ly_ht_table_chart.addWidget(self.chart_view_goal)
+        layout.addLayout(ly_ht_table_chart)
         layout.addLayout(form_layout)
 
         tab.setLayout(layout)
@@ -147,7 +167,7 @@ class MainView(QMainWindow):
     def setup_tab2(self, tab):
         layout = QVBoxLayout()
         
-        self.chart_view = ChartView()
+        self.chart_view = ChartViewDay()
         layout.addWidget(self.chart_view)
         tab.setLayout(layout)
         
@@ -203,3 +223,12 @@ class MainView(QMainWindow):
         self.load_goals(self.table_goal)
         self.table_study_day.setRowCount(0)
         self.study_day.load(self.table_study_day)
+
+        if self.table_goal and self.table_study_day is not None:
+            table_goal_data = data_of_table_all(self.table_goal)
+            table_study_day_data = data_of_table_all(self.table_study_day)
+
+            self.chart_view_goal = ChartViewDay(table_goal_data, table_study_day_data)
+        else:
+            self.chart_view_goal = ChartViewDay()
+

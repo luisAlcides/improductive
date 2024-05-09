@@ -23,11 +23,15 @@ class GoalModel:
 
                 if existing_goal:
                     goal_id = existing_goal[0]
-                    sql_update = '''UPDATE goal SET goal = ?, WHERE id'''
-                    cursor.execute(sql_update,(goal, goal_id))
+                    with self.con as cursor:
+                        sql_update = '''UPDATE goal SET goal = goal + ? WHERE id = ?'''
+                        cursor.execute(sql_update,(goal, goal_id,))
+                        self.success = True
                 else:
-                    sql_insert = '''INSERT INTO goal(goal, category_id, month_id, date_current) VALUES(?, ?,?,?)'''
-                    cursor.execute(sql_insert, values)
+                    with self.con as cursor:
+                        sql_insert = '''INSERT INTO goal(goal, category_id, month_id, date_current) VALUES(?, ?,?,?)'''
+                        cursor.execute(sql_insert, values)
+                        self.success = True
 
                 self.success = True
         except sqlite3.IntegrityError as e:
@@ -61,7 +65,6 @@ class GoalModel:
 
     def load(self, table, month):
         month_id = self.get_id_month(month)
-        print(month_id)
         try:
             sql_query = """SELECT c.name, 
                         g.goal, 
@@ -78,7 +81,6 @@ class GoalModel:
             with self.con as cursor:
                 cursor.execute(sql_query,(month_id,))
                 res = cursor.fetchall()
-                print(res)
                 data = []
                 for habit, goal, month, year in res:
                     div = self.day_month(month, year)

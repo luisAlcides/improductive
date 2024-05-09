@@ -6,9 +6,6 @@ from PySide6.QtWidgets import QWidget
 
 from view.mainView import MainView  # Assuming this remains the same
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-icon_path = os.path.join(current_dir, "view/icons/system.png")
-
 
 stylesheet = """
     QLabel{
@@ -26,8 +23,8 @@ stylesheet = """
 """
 
 
-script_directory = os.path.dirname(os.path.abspath(__file__))
-icon_path = os.path.join(script_directory, "icons", "system.png")
+path = os.path.dirname(os.path.abspath(__file__))
+icon_path = os.path.join(path, "icons", "system.png")
 
 
 class ImProductive(QWidget):

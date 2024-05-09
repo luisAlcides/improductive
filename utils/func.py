@@ -53,6 +53,15 @@ def data_of_table(table):
     return data
 
 
+def data_of_table_all(table):
+    data = []
+    for row in range(table.rowCount()):
+        row_data = [table.item(row, col).text() for col in range(table.columnCount())]
+        data.append(row_data)
+
+    return data
+
+
 def delete_from_table(table, controller=None):
     selected_rows = table.selectionModel().selectedRows()
     for row in selected_rows:
