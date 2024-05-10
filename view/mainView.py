@@ -3,8 +3,19 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QComboBox,
-                                 QFormLayout, QWidget, QTabWidget, QMainWindow, QTableWidget)
+from PySide6.QtWidgets import (
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QLineEdit,
+    QComboBox,
+    QFormLayout,
+    QWidget,
+    QTabWidget,
+    QMainWindow,
+    QTableWidget,
+)
 
 from view.addHabitView import AddHabitView
 from view.addGoalView import AddGoalView
@@ -21,50 +32,46 @@ from view.chartViewGoal import ChartViewDay
 
 from PySide6.QtWidgets import QMenu
 
-from utils.func import  clean_fields, data_of_table_all
+from utils.func import clean_fields, data_of_table_all
 from utils.validation import validate_fields
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
-ui_file_path = os.path.join(script_directory, 'ui', 'mainView.ui')
+ui_file_path = os.path.join(script_directory, "ui", "mainView.ui")
+
 
 class MainView(QMainWindow):
     def __init__(self):
         super().__init__()
-        
+
         self.db = Connection()
         self.db.setup_database()
-        
 
         self.setWindowTitle("ImProductive")
         self.setGeometry(100, 100, 800, 600)
-        
+
         self.study_day = AddHabitTimeController()
         self.goals_controller = GoalDataController()
-        
 
         self.create_menu_bar()
         self.create_tabs()
         self.cb_fill_category_habit_from_db()
-        
+
         self.combo_study_of.setContextMenuPolicy(Qt.CustomContextMenu)
         self.combo_study_of.customContextMenuRequested.connect(self.show_context_menu)
-        
-        
-
 
     def create_menu_bar(self):
         menubar = self.menuBar()
 
-        file_menu = menubar.addMenu('File')
+        file_menu = menubar.addMenu("File")
 
-        exit_action = QAction('Exit', self)
-        add_habit_action = QAction('Add Habit', self)
-        add_goal_action = QAction('Add Goal', self)
-        
+        exit_action = QAction("Exit", self)
+        add_habit_action = QAction("Add Habit", self)
+        add_goal_action = QAction("Add Goal", self)
+
         exit_action.triggered.connect(self.close)
         add_habit_action.triggered.connect(self.add_habit_category)
         add_goal_action.triggered.connect(self.add_goal)
-        
+
         file_menu.addAction(add_habit_action)
         file_menu.addAction(add_goal_action)
         file_menu.addAction(exit_action)
@@ -89,14 +96,14 @@ class MainView(QMainWindow):
         layout.setAlignment(Qt.AlignHCenter)
 
         form_layout = QFormLayout()
-       
-        self.label_minutes_study = QLabel('Minutes study today')
+
+        self.label_minutes_study = QLabel("Minutes study today")
         layout.addWidget(self.label_minutes_study)
 
         self.input_minutes_study = QLineEdit()
         layout.addWidget(self.input_minutes_study)
-        
-        self.label_cb_study_of = QLabel('Habit')
+
+        self.label_cb_study_of = QLabel("Habit")
         layout.addWidget(self.label_cb_study_of)
 
         self.combo_study_of = QComboBox()
@@ -107,16 +114,16 @@ class MainView(QMainWindow):
         btn_add.clicked.connect(self.add_habit_time)
         ly_ht_btn.addWidget(btn_add)
 
-        btn_update = QPushButton('Update')
+        btn_update = QPushButton("Update")
         btn_update.clicked.connect(self.refresh)
         ly_ht_btn.addWidget(btn_update)
 
         layout.addLayout(ly_ht_btn)
 
-        #label_last_month = QLabel("Last Month")
-        #table_last_month = QTableWidget()
-        #layout.addWidget(label_last_month)
-        #layout.addWidget(table_last_month)
+        # label_last_month = QLabel("Last Month")
+        # table_last_month = QTableWidget()
+        # layout.addWidget(label_last_month)
+        # layout.addWidget(table_last_month)
 
         label_goal_month = QLabel("Goal Today")
         ly_ht_table_chart = QHBoxLayout()
@@ -125,39 +132,33 @@ class MainView(QMainWindow):
 
         self.table_goal = QTableWidget()
         self.table_goal.setColumnCount(3)
-        self.table_goal.setHorizontalHeaderLabels(['Habit', 'Goal', 'Month'])
-        
-        self.load_goals(self.table_goal) 
-       
+        self.table_goal.setHorizontalHeaderLabels(["Habit", "Goal", "Month"])
 
-       
-        
-        
+        self.load_goals(self.table_goal)
 
         ly_vt_table.addWidget(label_goal_month)
         ly_vt_table.addWidget(self.table_goal)
-
 
         label_study_of = QLabel("Today Study")
         ly_vt_table.addWidget(label_study_of)
 
         self.table_study_day = QTableWidget()
         self.table_study_day.setColumnCount(3)
-        self.table_study_day.setHorizontalHeaderLabels(['Habit', 'Time', 'Date'])
+        self.table_study_day.setHorizontalHeaderLabels(["Habit", "Time", "Date"])
         self.study_day.load(self.table_study_day)
-        
+
         ly_vt_table.addWidget(self.table_study_day)
 
-
         if self.table_goal and self.table_study_day is not None:
-            table_goal_data = data_of_table_all(self.table_goal)
-            table_study_day_data = data_of_table_all(self.table_study_day)
+            self.table_goal_data = data_of_table_all(self.table_goal)
+            self.table_study_day_data = data_of_table_all(self.table_study_day)
 
-            self.chart_view_goal = ChartViewDay(table_goal_data, table_study_day_data)
+            self.chart_view_goal = ChartViewDay(
+                self.table_goal_data, self.table_study_day_data
+            )
         else:
             self.chart_view_goal = ChartViewDay()
-        
-        
+
         ly_ht_table_chart.addWidget(self.chart_view_goal)
         layout.addLayout(ly_ht_table_chart)
         layout.addLayout(form_layout)
@@ -166,54 +167,51 @@ class MainView(QMainWindow):
 
     def setup_tab2(self, tab):
         layout = QVBoxLayout()
-        
+
         self.chart_view = ChartViewDay()
         layout.addWidget(self.chart_view)
         tab.setLayout(layout)
-        
-        
+
     def cb_fill_category_habit(self):
         self.combo_study_of.clear()
         for category in self.cb_category_habit:
             self.combo_study_of.addItem(category[0])
-            
+
     def cb_fill_category_habit_from_db(self):
         self.cb_category_habit = CbFillController().load_category_habit()
         self.cb_fill_category_habit()
-    
+
     def load_goals(self, table):
-        self.goals_controller.load_goals(table, 'May')
-         
-    
+        self.goals_controller.load_goals(table, "May")
+
     def show_context_menu(self, position):
         menu = QMenu()
-        update_action = menu.addAction('Actualizar')
+        update_action = menu.addAction("Actualizar")
         action = menu.exec_(self.combo_study_of.mapToGlobal(position))
-        #if action == update_action:
+        # if action == update_action:
         self.cb_fill_category_habit_from_db()
         self.refresh()
-    
+
     def add_habit_time(self):
-        fields = [[self.input_minutes_study, 'number', self.label_minutes_study],
-                  [self.combo_study_of, 'cb', self.label_cb_study_of]]
-        
+        fields = [
+            [self.input_minutes_study, "number", self.label_minutes_study],
+            [self.combo_study_of, "cb", self.label_cb_study_of],
+        ]
+
         if not validate_fields(fields):
-            return 
-        
+            return
+
         name_habit = self.combo_study_of.currentText()
         input_text = self.input_minutes_study.text().strip()
         study_time = float(input_text)
-        
+
         model = AddHabitTimeModel(name_habit, study_time)
         self.study_day.add_habit(model)
         clean_fields(fields)
-        
-        
 
     def add_habit_category(self):
         self.add_habit_view = AddHabitView()
-        
-    
+
     def add_goal(self):
         self.add_goal_view = AddGoalView()
 
@@ -224,11 +222,6 @@ class MainView(QMainWindow):
         self.table_study_day.setRowCount(0)
         self.study_day.load(self.table_study_day)
 
-        if self.table_goal and self.table_study_day is not None:
-            table_goal_data = data_of_table_all(self.table_goal)
-            table_study_day_data = data_of_table_all(self.table_study_day)
-
-            self.chart_view_goal = ChartViewDay(table_goal_data, table_study_day_data)
-        else:
-            self.chart_view_goal = ChartViewDay()
-
+        self.chart_view_goal = ChartViewDay(
+            self.table_goal_data, self.table_study_day_data
+        )
