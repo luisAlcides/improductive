@@ -54,7 +54,6 @@ ico_delete_path = os.path.join(script_directory, "icons", "delete.png")
 class MainView(QMainWindow):
     def __init__(self):
         super().__init__()
-        print(ico_habit_path)
         self.db = Connection()
         self.db.setup_database()
 
