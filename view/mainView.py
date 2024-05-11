@@ -136,7 +136,6 @@ class MainView(QMainWindow):
 
         self.load_goals(self.table_goal)
 
-        ly_vt_table.addWidget(label_goal_month)
         ly_vt_table.addWidget(self.table_goal)
 
         label_study_of = QLabel("Today Study")
@@ -149,15 +148,14 @@ class MainView(QMainWindow):
 
         ly_vt_table.addWidget(self.table_study_day)
 
-        if self.table_goal and self.table_study_day is not None:
-            self.table_goal_data = data_of_table_all(self.table_goal)
-            self.table_study_day_data = data_of_table_all(self.table_study_day)
+        self.table_goal_data = data_of_table_all(self.table_goal)
+        self.table_study_day_data = data_of_table_all(self.table_study_day)
+        self.chart_view_goal = ChartViewDay()
 
-            self.chart_view_goal = ChartViewDay(
-                self.table_goal_data, self.table_study_day_data
+        if self.table_goal_data and self.table_study_day_data:
+            self.chart_view_goal.setup_chart(
+                self.table_study_day_data, self.table_goal_data
             )
-        else:
-            self.chart_view_goal = ChartViewDay()
 
         ly_ht_table_chart.addWidget(self.chart_view_goal)
         layout.addLayout(ly_ht_table_chart)
@@ -208,12 +206,15 @@ class MainView(QMainWindow):
         model = AddHabitTimeModel(name_habit, study_time)
         self.study_day.add_habit(model)
         clean_fields(fields)
+        self.refresh()
 
     def add_habit_category(self):
         self.add_habit_view = AddHabitView()
+        self.refresh()
 
     def add_goal(self):
         self.add_goal_view = AddGoalView()
+        self.refresh()
 
     def refresh(self):
         self.cb_fill_category_habit_from_db()
@@ -222,6 +223,11 @@ class MainView(QMainWindow):
         self.table_study_day.setRowCount(0)
         self.study_day.load(self.table_study_day)
 
-        self.chart_view_goal = ChartViewDay(
-            self.table_goal_data, self.table_study_day_data
-        )
+        self.table_goal_data = data_of_table_all(self.table_goal)
+        self.table_study_day_data = data_of_table_all(self.table_study_day)
+
+        if self.table_goal_data and self.table_study_day_data:
+            self.chart_view_goal.clean()
+            self.chart_view_goal.setup_chart(
+                self.table_study_day_data, self.table_goal_data
+            )
