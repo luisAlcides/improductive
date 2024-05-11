@@ -62,12 +62,14 @@ def data_of_table_all(table):
     return data
 
 
-def delete_from_table(table, controller=None):
+def delete_from_table(table, controller=None, data=None):
     selected_rows = table.selectionModel().selectedRows()
     for row in selected_rows:
-        data_id = table.item(row.row(), 0).text()
+        item_name = table.item(row.row(), 0).text()
         if controller is not None:
-            controller.delete(data_id)
+            item_id = controller.get_id(item_name)
+            controller.delete(item_id)
+            
         table.removeRow(row.row())
 
 

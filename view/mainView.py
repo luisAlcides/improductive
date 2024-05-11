@@ -1,5 +1,7 @@
 import os
 
+import datetime
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtGui import QIcon
@@ -25,6 +27,7 @@ from connection import Connection
 from controller.cbFillController import CbFillController
 from controller.goalDataController import GoalDataController
 from controller.addHabitTimeController import AddHabitTimeController
+from controller.studyDataController import StudyDataController 
 
 from model.addHabitTimeModel import AddHabitTimeModel
 
@@ -32,17 +35,26 @@ from view.chartViewGoal import ChartViewDay
 
 from PySide6.QtWidgets import QMenu
 
-from utils.func import clean_fields, data_of_table_all
+from utils.func import (
+    clean_fields,
+    data_of_table_all,
+    message_delete,
+    data_of_table,
+    delete_from_table,
+)
 from utils.validation import validate_fields
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
-ui_file_path = os.path.join(script_directory, "ui", "mainView.ui")
+ico_habit_path = os.path.join(script_directory, "icons", "add_habit.png")
+ico_goal_path = os.path.join(script_directory, "icons", "add_goal.png")
+ico_update_path = os.path.join(script_directory, "icons", "update.png")
+ico_delete_path = os.path.join(script_directory, "icons", "delete.png")
 
 
 class MainView(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        print(ico_habit_path)
         self.db = Connection()
         self.db.setup_database()
 
@@ -50,14 +62,13 @@ class MainView(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         self.study_day = AddHabitTimeController()
+        self.study_day_controller = StudyDataController() 
         self.goals_controller = GoalDataController()
 
         self.create_menu_bar()
         self.create_tabs()
+        self.toolbar()
         self.cb_fill_category_habit_from_db()
-
-        self.combo_study_of.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.combo_study_of.customContextMenuRequested.connect(self.show_context_menu)
 
     def create_menu_bar(self):
         menubar = self.menuBar()
@@ -91,6 +102,21 @@ class MainView(QMainWindow):
 
         self.setCentralWidget(tab_widget)
 
+    def toolbar(self):
+        toolbar = self.addToolBar("Toolbar")
+        add_goal_action = QAction(QIcon(ico_goal_path), "Add Goal", self)
+        add_habit_action = QAction(QIcon(ico_habit_path), "Add Habit", self)
+        delete_action = QAction(QIcon(ico_delete_path), "Delete", self)
+        update_action = QAction(QIcon(ico_update_path), "Update", self)
+        add_habit_action.triggered.connect(self.add_habit_category)
+        add_goal_action.triggered.connect(self.add_goal)
+        delete_action.triggered.connect(self.delete)
+        update_action.triggered.connect(self.update)
+        toolbar.addAction(add_habit_action)
+        toolbar.addAction(add_goal_action)
+        toolbar.addAction(delete_action)
+        toolbar.addAction(update_action)
+
     def setup_tab1(self, tab):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignHCenter)
@@ -120,11 +146,6 @@ class MainView(QMainWindow):
 
         layout.addLayout(ly_ht_btn)
 
-        # label_last_month = QLabel("Last Month")
-        # table_last_month = QTableWidget()
-        # layout.addWidget(label_last_month)
-        # layout.addWidget(table_last_month)
-
         label_goal_month = QLabel("Goal Today")
         ly_ht_table_chart = QHBoxLayout()
         ly_vt_table = QVBoxLayout()
@@ -134,8 +155,14 @@ class MainView(QMainWindow):
         self.table_goal.setColumnCount(3)
         self.table_goal.setHorizontalHeaderLabels(["Habit", "Goal", "Month"])
 
-        self.load_goals(self.table_goal)
+        self.current_month = datetime.datetime.now().strftime("%B")
+        self.load_goals(self.table_goal, self.current_month)
+        self.table_goal.setFocusPolicy(Qt.StrongFocus)
 
+        # self.table_goal.setContextMenuPolicy(Qt.CustomContextMenu)
+        # self.table_goal.customContextMenuRequested.connect(self.show_context_menu)
+
+        ly_vt_table.addWidget(label_goal_month)
         ly_vt_table.addWidget(self.table_goal)
 
         label_study_of = QLabel("Today Study")
@@ -145,6 +172,7 @@ class MainView(QMainWindow):
         self.table_study_day.setColumnCount(3)
         self.table_study_day.setHorizontalHeaderLabels(["Habit", "Time", "Date"])
         self.study_day.load(self.table_study_day)
+        self.table_study_day.setFocusPolicy(Qt.StrongFocus)
 
         ly_vt_table.addWidget(self.table_study_day)
 
@@ -179,12 +207,13 @@ class MainView(QMainWindow):
         self.cb_category_habit = CbFillController().load_category_habit()
         self.cb_fill_category_habit()
 
-    def load_goals(self, table):
-        self.goals_controller.load_goals(table, "May")
+    def load_goals(self, table, month):
+        self.goals_controller.load_goals(table, month)
 
     def show_context_menu(self, position):
         menu = QMenu()
         update_action = menu.addAction("Actualizar")
+        delete_action = menu.addAction("Eliminar")
         action = menu.exec_(self.combo_study_of.mapToGlobal(position))
         # if action == update_action:
         self.cb_fill_category_habit_from_db()
@@ -219,7 +248,7 @@ class MainView(QMainWindow):
     def refresh(self):
         self.cb_fill_category_habit_from_db()
         self.table_goal.setRowCount(0)
-        self.load_goals(self.table_goal)
+        self.load_goals(self.table_goal, self.current_month)
         self.table_study_day.setRowCount(0)
         self.study_day.load(self.table_study_day)
 
@@ -231,3 +260,23 @@ class MainView(QMainWindow):
             self.chart_view_goal.setup_chart(
                 self.table_study_day_data, self.table_goal_data
             )
+
+    def delete(self):
+        try:
+            if self.table_goal.hasFocus():
+                data = data_of_table(self.table_goal)
+                message_confirm = message_delete()
+                if message_confirm:
+                    delete_from_table(self.table_goal, self.goals_controller, data)
+            elif self.table_study_day.hasFocus():
+                data = data_of_table(self.table_study_day)
+                message_confirm = message_delete()
+                if message_confirm:
+                    delete_from_table(self.table_study_day, self.study_day_controller, data)
+        except Exception as e:
+            print(e)
+        self.refresh()
+
+    def update(self):
+        self.study_day.update()
+        self.refresh()

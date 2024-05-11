@@ -38,3 +38,17 @@ class StudyDataModel:
         except Exception as e:
             print('Error getting study data:', e)
             return [(0)]
+
+
+    def get_id_study(self, study):
+        sql = 'SELECT id FROM category_habits WHERE name = ?'
+        with self.db as cursor:
+            cursor.execute(sql, (study,))
+            study_id = cursor.fetchone()
+        return study_id[0]
+
+    def delete(self, study_id):
+        sql = 'DELETE FROM category_habits WHERE id = ?'
+        with self.db as cursor:
+            cursor.execute(sql, (study_id,))
+        return True

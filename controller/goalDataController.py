@@ -1,4 +1,3 @@
-from connection import Connection
 from model.goalModel import GoalModel
 
 class GoalDataController:
@@ -12,7 +11,13 @@ class GoalDataController:
     
     def load_goals(self, table, month):
         return self.model.load(table, month)
-    
+   
+    def get_id(self, data):
+        return self.model.get_id_goal(data)
+
+    def delete(self, goal_id):
+        return self.model.delete(goal_id)
+
     def was_successful(self):
         return self.model.success
 

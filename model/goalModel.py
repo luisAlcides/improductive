@@ -54,6 +54,14 @@ class GoalModel:
         
         return (category_id[0], month_id[0])
 
+    def get_id_category(self, category):
+        sql_category = 'SELECT id FROM category_habits WHERE name = ?'
+        with self.con as cursor:
+            cursor.execute(sql_category, (category,))
+            category_id = cursor.fetchone()
+        return category_id[0]
+
+
     def get_id_month(self, month):
         sql_month = 'SELECT id FROM months WHERE name = ?'
 
@@ -62,6 +70,14 @@ class GoalModel:
             month_id = cursor.fetchone()
 
         return month_id[0]
+
+    def get_id_goal(self, data):
+        category_id = self.get_id_category(data)
+        sql = 'SELECT id FROM goal WHERE category_id = ?'
+        with self.con as cursor:
+            cursor.execute(sql, (category_id,))
+            goal_id = cursor.fetchone()
+        return goal_id[0]
 
     def load(self, table, month):
         month_id = self.get_id_month(month)
@@ -107,4 +123,14 @@ class GoalModel:
 
         else:
             return 30
-    
+   
+
+    def delete(self,goal_id):
+        try:
+            with self.con as cursor:
+                sql_delete = 'DELETE FROM goal WHERE id = ?'
+                cursor.execute(sql_delete, (goal_id,))
+                self.success = True
+        except Exception as e:
+            print('Error deleting goal:', e)
+            self.success = False
