@@ -9,6 +9,7 @@ from controller.goalDataController import GoalDataController
 
 from PySide6.QtWidgets import QComboBox
 
+
 class AddGoalView(QMainWindow):
     TITLE_WINDOW = 'Add Goal'
     habit_added = Signal()
@@ -31,7 +32,7 @@ class AddGoalView(QMainWindow):
         label_goal = QLabel('Goal in hours')
         label_goal.setAlignment(Qt.AlignCenter)
         layout.addWidget(label_goal)
-        
+
         input_goal = QLineEdit()
         layout.addWidget(input_goal)
 
@@ -41,7 +42,7 @@ class AddGoalView(QMainWindow):
         cb_habit = QComboBox()
         self.fill_cb_habit(cb_habit)
         layout.addWidget(cb_habit)
-        
+
         label_month = QLabel('Month')
         layout.addWidget(label_month)
 
@@ -52,25 +53,23 @@ class AddGoalView(QMainWindow):
         # buttons
         btn_add = QPushButton('Add')
         btn_add.clicked.connect(self.add_goal)
-        
+
         self.fields = [[input_goal, 'number', label_goal],
                        [cb_habit, 'cb', label_habit],
                        [cb_month, 'cb', label_month]]
 
-        
         layout.addWidget(btn_add)
 
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
-        
-    
+
     def fill_cb_habit(self, cb):
         cb.clear()
         habits = CbFillController().load_category_habit()
         for habit in habits:
             cb.addItem(habit[0])
-    
+
     def fill_cb_month(self, cb):
         months = CbFillController().load_months()
         for month in months:
@@ -78,21 +77,16 @@ class AddGoalView(QMainWindow):
 
     def add_goal(self):
         if not validate_fields(self.fields):
-            return 
-        
+            return
+
         input_goal = self.fields[0][0].text().split()
         input_goal = input_goal[0].title()
-        
         cb_habit = self.fields[1][0].currentText()
         cb_month = self.fields[2][0].currentText()
-                
         controller = GoalDataController()
         controller.add_goal(input_goal, cb_habit, cb_month)
-        
         if controller.was_successful():
             message('Goal add corrently')
             clean_fields(self.fields)
         else:
             message('Error adding habit')
-            
-            

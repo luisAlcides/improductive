@@ -27,13 +27,12 @@ from connection import Connection
 from controller.cbFillController import CbFillController
 from controller.goalDataController import GoalDataController
 from controller.addHabitTimeController import AddHabitTimeController
-from controller.studyDataController import StudyDataController 
+from controller.studyDataController import StudyDataController
 
 from model.addHabitTimeModel import AddHabitTimeModel
 
 from view.chartViewGoal import ChartViewDay
-
-from PySide6.QtWidgets import QMenu
+from view.updateStudyDayHabitView import UpdateStudyDayHabitView
 
 from utils.func import (
     clean_fields,
@@ -41,6 +40,8 @@ from utils.func import (
     message_delete,
     data_of_table,
     delete_from_table,
+    message_edit,
+    edit_from_table
 )
 from utils.validation import validate_fields
 
@@ -61,7 +62,7 @@ class MainView(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         self.study_day = AddHabitTimeController()
-        self.study_day_controller = StudyDataController() 
+        self.study_day_controller = StudyDataController()
         self.goals_controller = GoalDataController()
 
         self.create_menu_bar()
@@ -90,7 +91,6 @@ class MainView(QMainWindow):
         tab_widget = QTabWidget()
 
         tab1 = QWidget()
-        tab1.customContextMenuRequested.connect(self.show_context_menu)
         self.setup_tab1(tab1)
 
         tab2 = QWidget()
@@ -135,9 +135,9 @@ class MainView(QMainWindow):
         layout.addWidget(self.combo_study_of)
 
         ly_ht_btn = QHBoxLayout()
-        btn_add = QPushButton("Add")
-        btn_add.clicked.connect(self.add_habit_time)
-        ly_ht_btn.addWidget(btn_add)
+        self.btn_add = QPushButton("Add")
+        self.btn_add.clicked.connect(self.add_habit_time)
+        ly_ht_btn.addWidget(self.btn_add)
 
         btn_update = QPushButton("Update")
         btn_update.clicked.connect(self.refresh)
@@ -158,9 +158,6 @@ class MainView(QMainWindow):
         self.load_goals(self.table_goal, self.current_month)
         self.table_goal.setFocusPolicy(Qt.StrongFocus)
 
-        # self.table_goal.setContextMenuPolicy(Qt.CustomContextMenu)
-        # self.table_goal.customContextMenuRequested.connect(self.show_context_menu)
-
         ly_vt_table.addWidget(label_goal_month)
         ly_vt_table.addWidget(self.table_goal)
 
@@ -169,7 +166,8 @@ class MainView(QMainWindow):
 
         self.table_study_day = QTableWidget()
         self.table_study_day.setColumnCount(3)
-        self.table_study_day.setHorizontalHeaderLabels(["Habit", "Time", "Date"])
+        self.table_study_day.setHorizontalHeaderLabels(
+            ["Habit", "Time", "Date"])
         self.study_day.load(self.table_study_day)
         self.table_study_day.setFocusPolicy(Qt.StrongFocus)
 
@@ -208,15 +206,6 @@ class MainView(QMainWindow):
 
     def load_goals(self, table, month):
         self.goals_controller.load_goals(table, month)
-
-    def show_context_menu(self, position):
-        menu = QMenu()
-        update_action = menu.addAction("Actualizar")
-        delete_action = menu.addAction("Eliminar")
-        action = menu.exec_(self.combo_study_of.mapToGlobal(position))
-        # if action == update_action:
-        self.cb_fill_category_habit_from_db()
-        self.refresh()
 
     def add_habit_time(self):
         fields = [
@@ -266,16 +255,51 @@ class MainView(QMainWindow):
                 data = data_of_table(self.table_goal)
                 message_confirm = message_delete()
                 if message_confirm:
-                    delete_from_table(self.table_goal, self.goals_controller, data)
+                    delete_from_table(
+                        self.table_goal, self.goals_controller, data)
             elif self.table_study_day.hasFocus():
                 data = data_of_table(self.table_study_day)
                 message_confirm = message_delete()
                 if message_confirm:
-                    delete_from_table(self.table_study_day, self.study_day_controller, data)
+                    delete_from_table(self.table_study_day,
+                                      self.study_day_controller, data)
         except Exception as e:
             print(e)
         self.refresh()
 
     def update(self):
-        self.study_day.update()
+        try:
+            if self.table_goal.hasFocus():
+                data = data_of_table(self.table_goal)
+                message_confirm = message_edit()
+                if message_confirm:
+                    edit_from_table(self.table_goal,
+                                    self.goals_controller,
+                                    data)
+            elif self.table_study_day.hasFocus():
+                data = data_of_table(self.table_study_day)
+                message_confirm = message_edit()
+
+                if message_confirm:
+                    study_id = edit_from_table(self.table_study_day,
+                                               self.study_day_controller,
+                                               data)
+                    view = UpdateStudyDayHabitView()
+
+                    study_time, category = self.study_day_controller.get_study_time_by_id(
+                        study_id)
+                    study_time = study_time[0] * 60
+                    category = category[0]
+                    # view.input_habit.setText(str(study_time))
+                    # view.cb_habit.setCurrentText(category)
+                    category_id = self.study_day_controller.get_category_id(
+                        category)
+                    # view.btn_add.clicked.connect(
+                    #   lambda:
+                    #      self.click_btn_update(
+                    #         float(study_time), category_id, study_id)
+                    # )
+
+        except Exception as e:
+            print(f'Error to update: {e}')
         self.refresh()

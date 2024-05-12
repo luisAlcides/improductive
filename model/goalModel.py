@@ -8,28 +8,35 @@ class GoalModel:
     def __init__(self):
         self.success = False
         self.con = Connection()
-        
-    
+
     def add_goal(self, goal, category, month):
         category_id, month_id = self.get_ids(category, month)
         current_time = datetime.datetime.now().strftime('%d-%m-%y')
         values = (goal, category_id, month_id, current_time)
-        
+
         try:
             with self.con as cursor:
-                sql_check = '''SELECT * FROM goal WHERE category_id = ? AND month_id = ?'''
+                sql_check = '''SELECT * FROM goal
+                                WHERE category_id = ?
+                                AND month_id = ?'''
                 cursor.execute(sql_check, (category_id, month_id,))
                 existing_goal = cursor.fetchone()
 
                 if existing_goal:
                     goal_id = existing_goal[0]
                     with self.con as cursor:
-                        sql_update = '''UPDATE goal SET goal = goal + ? WHERE id = ?'''
-                        cursor.execute(sql_update,(goal, goal_id,))
+                        sql_update = '''UPDATE goal SET goal = goal + ?
+                                        WHERE id = ?'''
+                        cursor.execute(sql_update, (goal, goal_id,))
                         self.success = True
                 else:
                     with self.con as cursor:
-                        sql_insert = '''INSERT INTO goal(goal, category_id, month_id, date_current) VALUES(?, ?,?,?)'''
+                        sql_insert = '''INSERT INTO goal(
+                                                    goal,
+                                                    category_id,
+                                                    month_id,
+                                                    date_current)
+                                        VALUES(?, ?,?,?)'''
                         cursor.execute(sql_insert, values)
                         self.success = True
 
@@ -40,18 +47,17 @@ class GoalModel:
         except Exception as e:
             print('Error adding category:', e)
             self.success = False
-        
-    
+
     def get_ids(self, category, month):
         sql_category = 'SELECT id FROM category_habits WHERE name = ?'
         sql_month = 'SELECT id FROM months WHERE name = ?'
-        
+
         with self.con as cursor:
             cursor.execute(sql_category, (category,))
             category_id = cursor.fetchone()
             cursor.execute(sql_month, (month,))
             month_id = cursor.fetchone()
-        
+
         return (category_id[0], month_id[0])
 
     def get_id_category(self, category):
@@ -60,7 +66,6 @@ class GoalModel:
             cursor.execute(sql_category, (category,))
             category_id = cursor.fetchone()
         return category_id[0]
-
 
     def get_id_month(self, month):
         sql_month = 'SELECT id FROM months WHERE name = ?'
@@ -82,20 +87,20 @@ class GoalModel:
     def load(self, table, month):
         month_id = self.get_id_month(month)
         try:
-            sql_query = """SELECT c.name, 
-                        g.goal, 
+            sql_query = """SELECT c.name,
+                        g.goal,
                         m.name,
                         strftime('%Y', g.date_current) as year
-                        FROM goal g 
-                        JOIN category_habits c 
+                        FROM goal g
+                        JOIN category_habits c
                         ON g.category_id = c.id
                         JOIN months m
-                        ON g.month_id = m.id 
+                        ON g.month_id = m.id
                         WHERE g.month_id=?
                         """
 
             with self.con as cursor:
-                cursor.execute(sql_query,(month_id,))
+                cursor.execute(sql_query, (month_id,))
                 res = cursor.fetchall()
                 data = []
                 for habit, goal, month, year in res:
@@ -103,13 +108,13 @@ class GoalModel:
                     goal_calc = float(goal)/div
                     format_goal = "{:.2f}".format(goal_calc)
                     data.append((habit, format_goal, month))
-                    
+
                 for dat in data:
                     add_to_table(table, dat)
         except Exception as e:
             print('Error loading goals: ', e)
 
-    def day_month(self,month, year):
+    def day_month(self, month, year):
         month_31 = [1, 3, 5, 7, 8, 10, 12]
 
         if month in month_31:
@@ -123,9 +128,8 @@ class GoalModel:
 
         else:
             return 30
-   
 
-    def delete(self,goal_id):
+    def delete(self, goal_id):
         try:
             with self.con as cursor:
                 sql_delete = 'DELETE FROM goal WHERE id = ?'

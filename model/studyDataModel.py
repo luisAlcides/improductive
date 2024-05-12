@@ -37,19 +37,47 @@ class StudyDataModel:
             print('Error getting study data:', e)
             return [(0)]
 
-    def get_id_study(self, study):
+    def get_category_id(self, study):
         sql_category_id = '''SELECT id FROM category_habits WHERE name=?'''
         with self.db as cursor:
             cursor.execute(sql_category_id, (study,))
             category_id = cursor.fetchone()
+        return category_id[0]
+
+    def get_id_study(self, study):
+        category_id = self.get_category_id(study)
         with self.db as cursor:
             sql = 'SELECT id FROM habit WHERE category_id = ?'
-            cursor.execute(sql, (category_id[0],))
+            cursor.execute(sql, (category_id,))
             study_id = cursor.fetchone()
         return study_id[0]
+
+    def get_study_time_by_id(self, study_id):
+        sql = 'SELECT study_time, category_id FROM habit WHERE id = ?'
+        with self.db as cursor:
+            cursor.execute(sql, (study_id,))
+            data_study_time = cursor.fetchall()
+            study_time = data_study_time[0]
+            category_id = study_time[1]
+
+        sql = 'SELECT name FROM category_habits WHERE id = ?'
+        with self.db as cursor:
+            cursor.execute(sql, (category_id,))
+            category = cursor.fetchone()
+        return study_time, category
 
     def delete(self, study_id):
         sql = 'DELETE FROM habit WHERE id = ?'
         with self.db as cursor:
             cursor.execute(sql, (study_id,))
         return True
+
+    def update(self, study_time, category, study_id):
+        try:
+            sql = '''UPDATE habit SET study_time = + ?,
+                            category_id = ? WHERE id = ?'''
+            with self.db as cursor:
+                cursor.execute(sql, (study_time, category, study_id,))
+            return True
+        except Exception as e:
+            print('Error updating study data:', e)

@@ -33,7 +33,6 @@ def load_departaments(cb):
     cb.addItems(deparments)
 
 
-
 # This function add data to table
 def add_to_table(table, data):
     row_position = table.rowCount()
@@ -56,7 +55,8 @@ def data_of_table(table):
 def data_of_table_all(table):
     data = []
     for row in range(table.rowCount()):
-        row_data = [table.item(row, col).text() for col in range(table.columnCount())]
+        row_data = [table.item(row, col).text()
+                    for col in range(table.columnCount())]
         data.append(row_data)
 
     return data
@@ -69,8 +69,16 @@ def delete_from_table(table, controller=None, data=None):
         if controller is not None:
             item_id = controller.get_id(item_name)
             controller.delete(item_id)
-            
         table.removeRow(row.row())
+
+
+def edit_from_table(table, controller, data):
+    selected_rows = table.selectionModel().selectedRows()
+    for row in selected_rows:
+        item_name = table.item(row.row(), 0).text()
+        if controller is not None:
+            item_id = controller.get_id(item_name)
+            return controller.get_data_for_update(item_id)
 
 
 def message(message):
@@ -81,12 +89,26 @@ def message(message):
 
 def message_delete():
     message = QMessageBox()
-    message.setWindowTitle('Eliminar Producto')
-    message.setText('¿Desea eliminar este producto?')
+    message.setWindowTitle('Delete')
+    message.setText('Do you want to delete')
 
     message.addButton(QMessageBox.StandardButton.Yes)
     message.addButton(QMessageBox.StandardButton.No)
-    message.button(QMessageBox.StandardButton.Yes).setText('Sí')
+    message.button(QMessageBox.StandardButton.Yes).setText('Yes')
+    message.button(QMessageBox.StandardButton.No).setText('No')
+
+    button = message.exec()
+    return button
+
+
+def message_edit():
+    message = QMessageBox()
+    message.setWindowTitle('Update')
+    message.setText('Do you want to update?')
+
+    message.addButton(QMessageBox.StandardButton.Yes)
+    message.addButton(QMessageBox.StandardButton.No)
+    message.button(QMessageBox.StandardButton.Yes).setText('Yes')
     message.button(QMessageBox.StandardButton.No).setText('No')
 
     button = message.exec()
@@ -96,8 +118,6 @@ def message_delete():
 def limit_Double_spin(object):
     object.setMinimum(0)
     object.setMaximum(9999999.99)
-
-
 
 
 def clean_fields(fields):
