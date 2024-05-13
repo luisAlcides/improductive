@@ -81,11 +81,15 @@ class StudyDataModel:
         return True
 
     def update(self, study_time, category, study_id):
+        current_time = datetime.datetime.now().strftime('%d-%m-%y')
         try:
             sql = '''UPDATE habit SET study_time = + ?,
-                            category_id = ? WHERE id = ?'''
+                            category_id = ?
+                            WHERE id = ?
+                            AND date_current = ?'''
             with self.db as cursor:
-                cursor.execute(sql, (study_time, category, study_id,))
+                cursor.execute(
+                    sql, (study_time, category, study_id, current_time,))
             self.success = True
             return True
         except Exception as e:

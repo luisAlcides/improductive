@@ -33,7 +33,13 @@ def load_departaments(cb):
     cb.addItems(deparments)
 
 
-# This function add data to table
+def cb_fill_category_habit(cb, controller):
+    cb.clear()
+    category_habit = controller.get_category_habits()
+    for category in category_habit:
+        cb.addItem(category[0])
+
+
 def add_to_table(table, data):
     row_position = table.rowCount()
     table.insertRow(row_position)

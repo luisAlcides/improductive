@@ -24,7 +24,7 @@ from view.addGoalView import AddGoalView
 
 from connection import Connection
 
-from controller.cbFillController import CbFillController
+from controller.habitController import HabitController
 from controller.goalDataController import GoalDataController
 from controller.addHabitTimeController import AddHabitTimeController
 from controller.studyDataController import StudyDataController
@@ -42,7 +42,8 @@ from utils.func import (
     data_of_table,
     delete_from_table,
     message_edit,
-    edit_from_table
+    edit_from_table,
+    cb_fill_category_habit
 )
 from utils.validation import validate_fields
 
@@ -65,11 +66,12 @@ class MainView(QMainWindow):
         self.study_day = AddHabitTimeController()
         self.study_day_controller = StudyDataController()
         self.goals_controller = GoalDataController()
+        self.habit_controller = HabitController()
 
         self.create_menu_bar()
         self.create_tabs()
         self.toolbar()
-        self.cb_fill_category_habit_from_db()
+        cb_fill_category_habit(self.combo_study_of, self.habit_controller)
 
     def create_menu_bar(self):
         menubar = self.menuBar()
@@ -196,15 +198,6 @@ class MainView(QMainWindow):
         layout.addWidget(self.chart_view)
         tab.setLayout(layout)
 
-    def cb_fill_category_habit(self):
-        self.combo_study_of.clear()
-        for category in self.cb_category_habit:
-            self.combo_study_of.addItem(category[0])
-
-    def cb_fill_category_habit_from_db(self):
-        self.cb_category_habit = CbFillController().load_category_habit()
-        self.cb_fill_category_habit()
-
     def load_goals(self, table, month):
         self.goals_controller.load_goals(table, month)
 
@@ -235,7 +228,7 @@ class MainView(QMainWindow):
         self.refresh()
 
     def refresh(self):
-        self.cb_fill_category_habit_from_db()
+        cb_fill_category_habit(self.combo_study_of, self.habit_controller)
         self.table_goal.setRowCount(0)
         self.load_goals(self.table_goal, self.current_month)
         self.table_study_day.setRowCount(0)
@@ -283,10 +276,8 @@ class MainView(QMainWindow):
                 study_id = edit_from_table(self.table_study_day,
                                            self.study_day_controller,
                                            data)
-                self.controller_update_study_day = UpdateStudyDayHabitController
-                (
-                    self.study_day_controller,
-                    study_id)
+                self.controller_update_study_day = UpdateStudyDayHabitController(
+                    self.study_day_controller, study_id)
         except Exception as e:
             print(f'Error to update: {e}')
         self.refresh()

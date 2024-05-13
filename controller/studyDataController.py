@@ -28,3 +28,6 @@ class StudyDataController:
 
     def update(self, study_time, category_id, study_id):
         return self.model.update(study_time, category_id, study_id)
+
+    def success(self):
+        return self.model.success

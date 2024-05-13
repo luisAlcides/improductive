@@ -38,7 +38,8 @@ class ChartViewDay(QWidget):
             colors = []
 
             for i in range(len(habits)):
-                percentage = (studied_hours[i] / goals[i]) * 100 if goals[i] != 0 else 0
+                percentage = (
+                    studied_hours[i] / goals[i]) * 100 if goals[i] != 0 else 0
 
                 if percentage <= 30:
                     colors.append("#FA5F4B")
@@ -71,6 +72,7 @@ class ChartViewDay(QWidget):
 
         self.chart_canvas.draw()
         self.layout.addWidget(self.chart_canvas)
+        plt.close(fig)
 
     def clean(self):
         if self.chart_canvas:
