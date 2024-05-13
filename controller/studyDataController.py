@@ -25,3 +25,6 @@ class StudyDataController:
 
     def get_data_for_update(self, study_id):
         return study_id
+
+    def update(self, study_time, category_id, study_id):
+        return self.model.update(study_time, category_id, study_id)

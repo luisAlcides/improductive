@@ -3,7 +3,7 @@ import sqlite3
 SQL_CREATE_TABLE_CATEGORY_HABIT = '''CREATE TABLE IF NOT EXISTS category_habits(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    date_current DATETIME 
+    date_current DATETIME
     )
 '''
 
@@ -34,9 +34,11 @@ SQL_CREATE_TABLE_GOAL = '''CREATE TABLE IF NOT EXISTS goal(
     
     )'''
 
-months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+months = ['January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December']
 
-SQL_CREATE_TABLE = [SQL_CREATE_TABLE_CATEGORY_HABIT, SQL_CREATE_TABLE_HABIT, SQL_CREATE_TABLE_GOAL, SQL_CREATE_TABLE_MONTHS]
+SQL_CREATE_TABLE = [SQL_CREATE_TABLE_CATEGORY_HABIT,
+                    SQL_CREATE_TABLE_HABIT, SQL_CREATE_TABLE_GOAL, SQL_CREATE_TABLE_MONTHS]
 
 
 class Connection:
@@ -63,17 +65,16 @@ class Connection:
                     cursor.execute(table)
             except sqlite3.OperationalError as e:
                 print('Error creating tables: ', e)
-                
-    
+
     def insert_month(self):
         with self as cursor:
             cursor.execute('SELECT COUNT(*) FROM months')
             count = cursor.fetchone()[0]
             if count == 0:
                 for month in months:
-                    cursor.execute('INSERT INTO months(name) VALUES(?)', (month,))
+                    cursor.execute(
+                        'INSERT INTO months(name) VALUES(?)', (month,))
 
-    
     def setup_database(self):
         with self as cursor:
             Connection.create_tables(self)

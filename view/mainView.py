@@ -28,11 +28,12 @@ from controller.cbFillController import CbFillController
 from controller.goalDataController import GoalDataController
 from controller.addHabitTimeController import AddHabitTimeController
 from controller.studyDataController import StudyDataController
+from controller.updateStudyDayHabitController import UpdateStudyDayHabitController
 
 from model.addHabitTimeModel import AddHabitTimeModel
 
 from view.chartViewGoal import ChartViewDay
-from view.updateStudyDayHabitView import UpdateStudyDayHabitView
+
 
 from utils.func import (
     clean_fields,
@@ -278,28 +279,14 @@ class MainView(QMainWindow):
                                     data)
             elif self.table_study_day.hasFocus():
                 data = data_of_table(self.table_study_day)
-                message_confirm = message_edit()
 
-                if message_confirm:
-                    study_id = edit_from_table(self.table_study_day,
-                                               self.study_day_controller,
-                                               data)
-                    view = UpdateStudyDayHabitView()
-
-                    study_time, category = self.study_day_controller.get_study_time_by_id(
-                        study_id)
-                    study_time = study_time[0] * 60
-                    category = category[0]
-                    # view.input_habit.setText(str(study_time))
-                    # view.cb_habit.setCurrentText(category)
-                    category_id = self.study_day_controller.get_category_id(
-                        category)
-                    # view.btn_add.clicked.connect(
-                    #   lambda:
-                    #      self.click_btn_update(
-                    #         float(study_time), category_id, study_id)
-                    # )
-
+                study_id = edit_from_table(self.table_study_day,
+                                           self.study_day_controller,
+                                           data)
+                self.controller_update_study_day = UpdateStudyDayHabitController
+                (
+                    self.study_day_controller,
+                    study_id)
         except Exception as e:
             print(f'Error to update: {e}')
         self.refresh()
