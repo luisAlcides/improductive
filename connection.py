@@ -47,7 +47,7 @@ class Connection:
 
     def __enter__(self):
         try:
-            self.con = sqlite3.connect('database.db')
+            self.con = sqlite3.connect('dbimproductive.db')
             return self.con.cursor()
         except Exception as e:
             print('Database connection error:', e)

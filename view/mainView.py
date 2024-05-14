@@ -2,7 +2,7 @@ import os
 
 import datetime
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QAction
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QMainWindow,
     QTableWidget,
+    QFileDialog
 )
 
 from view.addHabitView import AddHabitView
@@ -29,6 +30,7 @@ from controller.goalDataController import GoalDataController
 from controller.addHabitTimeController import AddHabitTimeController
 from controller.studyDataController import StudyDataController
 from controller.updateStudyDayHabitController import UpdateStudyDayHabitController
+from controller.exportImportDatabaseController import ExportImportDatabaseController
 
 from model.addHabitTimeModel import AddHabitTimeModel
 
@@ -50,12 +52,21 @@ from utils.roundIconButton import RoundIconButton
 from utils.validation import validate_fields
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
+database_path = os.path.join(script_directory, '..', 'dbimproductive.db')
+
 ico_habit_path = os.path.join(script_directory, "icons", "add_habit.png")
 ico_goal_path = os.path.join(script_directory, "icons", "add_goal.png")
 ico_update_path = os.path.join(script_directory, "icons", "update.png")
 ico_delete_path = os.path.join(script_directory, "icons", "delete.png")
 ico_add_path = os.path.join(script_directory, "icons", "add.png")
 ico_refresh_path = os.path.join(script_directory, "icons", "refresh.png")
+ico_start_timer_path = os.path.join(
+    script_directory, "icons", "start_timer.png")
+ico_stop_timer_path = os.path.join(script_directory, "icons", "stop_timer.png")
+ico_pause_timer_path = os.path.join(
+    script_directory, "icons", "pause_timer.png")
+ico_toggle_timer_path = os.path.join(
+    script_directory, "icons", "toggle_timer.png")
 
 
 class MainView(QMainWindow):
@@ -64,6 +75,15 @@ class MainView(QMainWindow):
         self.db = Connection()
         self.db.setup_database()
 
+        self.timer_mode = False
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_timer)
+        self.elapsed_time = 0
+
+        self.timer_time = QTimer(self)
+        self.timer_time.timeout.connect(self.update_current_time)
+        self.timer_time.start(1000)
+
         self.setWindowTitle("ImProductive")
         self.setGeometry(100, 100, 800, 600)
 
@@ -71,6 +91,8 @@ class MainView(QMainWindow):
         self.study_day_controller = StudyDataController()
         self.goals_controller = GoalDataController()
         self.habit_controller = HabitController()
+        self.controller_ei_database = ExportImportDatabaseController(
+            database_path)
 
         self.create_menu_bar()
         self.create_tabs()
@@ -86,12 +108,22 @@ class MainView(QMainWindow):
         add_habit_action = QAction("Add Habit", self)
         add_goal_action = QAction("Add Goal", self)
 
+        export_action = QAction('Export Database', self)
+        export_action.triggered.connect(
+            self.export_database)
+
+        import_action = QAction('Import Database', self)
+        import_action.triggered.connect(
+            self.import_database)
+
         exit_action.triggered.connect(self.close)
         add_habit_action.triggered.connect(self.add_habit_category)
         add_goal_action.triggered.connect(self.add_goal)
 
         file_menu.addAction(add_habit_action)
         file_menu.addAction(add_goal_action)
+        file_menu.addAction(export_action)
+        file_menu.addAction(import_action)
         file_menu.addAction(exit_action)
 
     def create_tabs(self):
@@ -108,20 +140,106 @@ class MainView(QMainWindow):
 
         self.setCentralWidget(tab_widget)
 
+    def export_database(self):
+        try:
+            default_name = 'dbimproductive.db'
+            file_filter = 'Database Files (*.db)'
+            destination_path, _ = QFileDialog.getSaveFileName(
+                self, 'Export Database', default_name, file_filter)
+            if destination_path:
+                self.controller_ei_database.exportDatabase(destination_path)
+        except Exception as e:
+            print(f'Error to export database: {e}')
+
+    def import_database(self):
+        try:
+            source_path, _ = QFileDialog.getOpenFileName(
+                self, 'Import Database', '', 'Database Files (*.db)')
+            if source_path:
+                self.controller_ei_database.importDatabase(source_path)
+        except Exception as e:
+            print(f'Error to import database: {e}')
+
+    def timer_start(self, interval):
+        self.timer_start(interval)
+
+    def timer_stop(self):
+        self.timer.stop()
+
+    def start_timer(self):
+        self.timer.start(1000)
+        self.btn_start_timer.setEnabled(False)
+        self.btn_pause_timer.setEnabled(True)
+        self.btn_stop_timer.setEnabled(True)
+
+    def pause_timer(self):
+        self.timer.stop()
+        self.btn_start_timer.setEnabled(True)
+        self.btn_pause_timer.setEnabled(False)
+        self.btn_stop_timer.setEnabled(True)
+
+    def stop_timer(self):
+        self.timer.stop()
+        self.input_minutes_study.setText(str(self.elapsed_time / 60))
+        self.elapsed_time = 0
+        self.btn_start_timer.setEnabled(True)
+        self.btn_pause_timer.setEnabled(False)
+        self.btn_stop_timer.setEnabled(False)
+
+    def update_timer(self):
+        self.elapsed_time += 1
+        hours = self.elapsed_time // 3600
+        minutes = (self.elapsed_time % 3600) // 60
+        seconds = self.elapsed_time % 60
+        self.input_minutes_study.setText(
+            f"{hours:02}:{minutes:02}:{seconds:02}")
+
+    def toggle_timer_manual(self):
+        if self.timer_mode:
+            self.timer_mode = False
+            self.input_minutes_study.setReadOnly(False)
+            self.btn_start_timer.setEnabled(False)
+            self.btn_stop_timer.setEnabled(False)
+            self.btn_pause_timer.setEnabled(False)
+
+        else:
+            self.timer_mode = True
+            self.input_minutes_study.setReadOnly(True)
+            self.btn_start_timer.setEnabled(True)
+            self.btn_stop_timer.setEnabled(True)
+            self.btn_pause_timer.setEnabled(True)
+
     def toolbar(self):
         toolbar = self.addToolBar("Toolbar")
         add_goal_action = QAction(QIcon(ico_goal_path), "Add Goal", self)
         add_habit_action = QAction(QIcon(ico_habit_path), "Add Habit", self)
         delete_action = QAction(QIcon(ico_delete_path), "Delete", self)
         update_action = QAction(QIcon(ico_update_path), "Update", self)
+        toggle_timer_action = QAction(
+            QIcon(ico_toggle_timer_path), 'Toggle Timer/Manual', self)
+
         add_habit_action.triggered.connect(self.add_habit_category)
         add_goal_action.triggered.connect(self.add_goal)
         delete_action.triggered.connect(self.delete)
         update_action.triggered.connect(self.update)
+        toggle_timer_action.triggered.connect(self.toggle_timer_manual)
+
         toolbar.addAction(add_habit_action)
         toolbar.addAction(add_goal_action)
         toolbar.addAction(delete_action)
         toolbar.addAction(update_action)
+        toolbar.addAction(toggle_timer_action)
+
+    def adjust_icon_size(self, event, btn):
+        button_size = btn.size()
+        btn.setIconSize(button_size)
+
+    def update_current_time(self):
+        current_time = datetime.datetime.now().strftime('%I:%M %p')
+        self.label_current_time.setText(current_time)
+
+        current_date = datetime.datetime.now().strftime('%A %d %B %Y')
+        self.label_current_date.setText(current_date)
 
     def setup_tab1(self, tab):
         layout = QVBoxLayout()
@@ -130,7 +248,51 @@ class MainView(QMainWindow):
         form_layout = QFormLayout()
 
         ly_vt_table = QVBoxLayout()
+        ly_ht_time = QHBoxLayout()
+        ly_ht_btn_timer = QHBoxLayout()
+        ly_ht_time.addLayout(ly_ht_btn_timer)
 
+        ly_ht_btn_timer.setAlignment(Qt.AlignLeft)
+
+        self.label_current_time = QLabel()
+        self.label_current_date = QLabel()
+        ly_ht_time.addWidget(self.label_current_time)
+        ly_ht_time.addWidget(self.label_current_date)
+
+        self.update_current_time()
+
+        # Timer buttons
+        self.btn_start_timer = QPushButton()
+        self.btn_start_timer.setIcon(QIcon(ico_start_timer_path))
+        self.btn_start_timer.setFixedSize(QSize(35, 35))
+        self.btn_start_timer.resizeEvent = lambda event: self.adjust_icon_size(event,
+                                                                               self.btn_start_timer)
+        self.btn_start_timer.setToolTip("Start Timer")
+        self.btn_start_timer.setEnabled(False)
+        self.btn_start_timer.clicked.connect(self.start_timer)
+        ly_ht_btn_timer.addWidget(self.btn_start_timer)
+
+        self.btn_pause_timer = QPushButton()
+        self.btn_pause_timer.setIcon(QIcon(ico_pause_timer_path))
+        self.btn_pause_timer.setToolTip("Pause Timer")
+        self.btn_pause_timer.setFixedSize(QSize(35, 35))
+        self.btn_pause_timer.resizeEvent = lambda event: self.adjust_icon_size(event,
+                                                                               self.btn_pause_timer)
+        self.btn_pause_timer.setEnabled(False)
+        self.btn_pause_timer.clicked.connect(self.pause_timer)
+        ly_ht_btn_timer.addWidget(self.btn_pause_timer)
+
+        self.btn_stop_timer = QPushButton()
+        self.btn_stop_timer.setIcon(QIcon(ico_stop_timer_path))
+        self.btn_stop_timer.setToolTip("Stop Timer")
+        self.btn_stop_timer.setFixedSize(QSize(35, 35))
+        self.btn_stop_timer.resizeEvent = lambda event: self.adjust_icon_size(event,
+                                                                              self.btn_stop_timer)
+        self.btn_stop_timer.setEnabled(False)
+        self.btn_stop_timer.clicked.connect(self.stop_timer)
+        ly_ht_btn_timer.addWidget(self.btn_stop_timer)
+
+        ly_vt_table.addLayout(ly_ht_time)
         self.label_minutes_study = QLabel("Minutes study today")
         ly_vt_table.addWidget(self.label_minutes_study)
 
@@ -146,13 +308,21 @@ class MainView(QMainWindow):
 
         ly_ht_btn = QHBoxLayout()
 
-        self.btn_add = QPushButton('Add')
+        self.btn_add = QPushButton('')
+        self.btn_add.setIcon(QIcon(ico_add_path))
+        self.btn_add.setFixedSize(QSize(35, 35))
+        self.btn_add.resizeEvent = lambda event: self.adjust_icon_size(event,
+                                                                       self.btn_add)
         self.btn_add.setToolTip("Add habit")
         self.btn_add.setShortcut("Ctrl+a")
         self.btn_add.clicked.connect(self.add_habit_time)
         ly_ht_btn.addWidget(self.btn_add)
 
-        btn_update = QPushButton('Refresh')
+        btn_update = QPushButton('')
+        btn_update.setIcon(QIcon(ico_refresh_path))
+        btn_update.setFixedSize(QSize(35, 35))
+        btn_update.resizeEvent = lambda event: self.adjust_icon_size(
+            event, btn_update)
         btn_update.setToolTip('Refresh')
         btn_update.setShortcut('Ctrl+r')
         btn_update.clicked.connect(self.refresh)

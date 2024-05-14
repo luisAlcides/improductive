@@ -18,8 +18,7 @@ stylesheet = """
         height: 25;
     }
 QPushButton {
-    background-color: #f0f0f0; /* Color de fondo suave */
-    border: 1px solid #ccc; /* Borde del botón */
+    border: none;
     color: #333; /* Color del texto */
     padding: 10px;
     border-radius: 5px;
