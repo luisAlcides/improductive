@@ -43,8 +43,10 @@ from utils.func import (
     delete_from_table,
     message_edit,
     edit_from_table,
-    cb_fill_category_habit
+    cb_fill_category_habit,
+
 )
+from utils.roundIconButton import RoundIconButton
 from utils.validation import validate_fields
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +54,8 @@ ico_habit_path = os.path.join(script_directory, "icons", "add_habit.png")
 ico_goal_path = os.path.join(script_directory, "icons", "add_goal.png")
 ico_update_path = os.path.join(script_directory, "icons", "update.png")
 ico_delete_path = os.path.join(script_directory, "icons", "delete.png")
+ico_add_path = os.path.join(script_directory, "icons", "add.png")
+ico_refresh_path = os.path.join(script_directory, "icons", "refresh.png")
 
 
 class MainView(QMainWindow):
@@ -125,34 +129,41 @@ class MainView(QMainWindow):
 
         form_layout = QFormLayout()
 
+        ly_vt_table = QVBoxLayout()
+
         self.label_minutes_study = QLabel("Minutes study today")
-        layout.addWidget(self.label_minutes_study)
+        ly_vt_table.addWidget(self.label_minutes_study)
 
         self.input_minutes_study = QLineEdit()
-        layout.addWidget(self.input_minutes_study)
+        self.input_minutes_study.setPlaceholderText('in minutes')
+        ly_vt_table.addWidget(self.input_minutes_study)
 
         self.label_cb_study_of = QLabel("Habit")
-        layout.addWidget(self.label_cb_study_of)
+        ly_vt_table.addWidget(self.label_cb_study_of)
 
         self.combo_study_of = QComboBox()
-        layout.addWidget(self.combo_study_of)
+        ly_vt_table.addWidget(self.combo_study_of)
 
         ly_ht_btn = QHBoxLayout()
-        self.btn_add = QPushButton("Add")
+
+        self.btn_add = QPushButton('Add')
+        self.btn_add.setToolTip("Add habit")
+        self.btn_add.setShortcut("Ctrl+a")
         self.btn_add.clicked.connect(self.add_habit_time)
         ly_ht_btn.addWidget(self.btn_add)
 
-        btn_update = QPushButton("Update")
+        btn_update = QPushButton('Refresh')
+        btn_update.setToolTip('Refresh')
+        btn_update.setShortcut('Ctrl+r')
         btn_update.clicked.connect(self.refresh)
         ly_ht_btn.addWidget(btn_update)
 
-        layout.addLayout(ly_ht_btn)
-
         label_goal_month = QLabel("Goal Today")
         ly_ht_table_chart = QHBoxLayout()
-        ly_vt_table = QVBoxLayout()
+
         ly_ht_table_chart.addLayout(ly_vt_table)
 
+        ly_vt_table.addLayout(ly_ht_btn)
         self.table_goal = QTableWidget()
         self.table_goal.setColumnCount(3)
         self.table_goal.setHorizontalHeaderLabels(["Habit", "Goal", "Month"])

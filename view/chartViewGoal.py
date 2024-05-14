@@ -11,6 +11,7 @@ class ChartViewDay(QWidget):
         self.chart_canvas = None
 
     def setup_chart(self, study_day=None, goal_data=None):
+        plt.style.use('seaborn-v0_8-dark-palette')
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.set_title("Study Goals and Progress")
         ax.set_xlabel("Goals")
@@ -28,8 +29,10 @@ class ChartViewDay(QWidget):
                 goals_name,
                 goals,
                 color="#C0BEBC",
+                edgecolor='black',
                 label="Goals",
-                height=0.5
+                height=0.5,
+                alpha=0.8
             )
 
         if study_day is not None:
@@ -59,8 +62,10 @@ class ChartViewDay(QWidget):
                 habits_name,
                 habits,
                 color=colors,
+                edgecolor='black',
                 label="Studied Hours",
-                height=0.5
+                height=0.5,
+                alpha=0.8
             )
 
         else:
@@ -69,7 +74,8 @@ class ChartViewDay(QWidget):
         legend_handles = [
             plt.Rectangle((0, 0), 1, 1, color=color) for color in legend_colors
         ]
-        ax.legend(legend_handles, legend_labels, loc="upper right")
+        ax.legend(legend_handles, legend_labels,
+                  loc="upper right", fontsize=12)
 
         self.chart_canvas = FigureCanvas(fig)
         self.layout.addWidget(self.chart_canvas)

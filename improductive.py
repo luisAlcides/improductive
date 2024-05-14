@@ -17,9 +17,34 @@ stylesheet = """
     QLineEdit{
         height: 25;
     }
-    QPushButton{
-        height: 25;
-    }
+QPushButton {
+    background-color: #f0f0f0; /* Color de fondo suave */
+    border: 1px solid #ccc; /* Borde del botón */
+    color: #333; /* Color del texto */
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+QPushButton:hover {
+    background-color: #e0e0e0; /* Color de fondo suave al pasar el mouse */
+}
+
+QPushButton:pressed {
+    background-color: #d0d0d0; /* Color de fondo al presionar el botón */
+}
+
+QPushButton:disabled {
+    background-color: #eee; /* Color de fondo para botón deshabilitado */
+    color: #ccc; /* Color del texto para botón deshabilitado */
+}
+
+QPushButton::menu-indicator {
+    image: none; /* Ocultar indicador de menú si existe */
+}
+
+
+
 """
 
 
