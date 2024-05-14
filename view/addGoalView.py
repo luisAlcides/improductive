@@ -48,6 +48,8 @@ class AddGoalView(QMainWindow):
 
         cb_month = QComboBox()
         self.fill_cb_month(cb_month)
+        current_month = CbFillController().get_current_month()
+        cb_month.setCurrentText(current_month)
         layout.addWidget(cb_month)
 
         # buttons
