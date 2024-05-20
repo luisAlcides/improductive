@@ -1,79 +1,115 @@
+import matplotlib.pyplot as plt
+from PyQt6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QTabWidget,
+    QTableWidget,
+    QTableWidgetItem,
+)
 import sys
-from PySide6.QtCore import QTimer, QTime, Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QMenu, QSystemTrayIcon
-from PySide6.QtGui import QIcon, QAction
 
-class MainWindow(QMainWindow):
+
+class HabitTrackingApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Temporizador")
-        self.setGeometry(300, 300, 250, 150)
-        
-        # Label para mostrar el temporizador
-        self.label = QLabel("00:00:00", self)
-        self.label.setAlignment(Qt.AlignCenter)
-        self.setCentralWidget(self.label)
 
-        # Configuración del temporizador
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_timer)
-        self.time = QTime(0, 0, 0)
-        self.timer_running = False
+        self.setWindowTitle("Habit Tracking App")
 
-        # Crear un icono de sistema
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon("path/to/icon.png"))  # Asegúrate de que la ruta del icono sea correcta
+        # Create central widget and main layout
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
 
-        # Crear un menú para el icono de sistema
-        self.tray_menu = QMenu()
-        
-        self.time_action = QAction("00:00:00", self)  # Acción para mostrar el temporizador en tiempo real
-        self.tray_menu.addAction(self.time_action)
+        # Create input fields
+        input_layout = QHBoxLayout()
+        self.habit_input = QLineEdit()
+        self.goal_input = QLineEdit()
+        self.time_input = QLineEdit()
+        input_layout.addWidget(QLabel("Habit:"))
+        input_layout.addWidget(self.habit_input)
+        input_layout.addWidget(QLabel("Goal:"))
+        input_layout.addWidget(self.goal_input)
+        input_layout.addWidget(QLabel("Time (hrs):"))
+        input_layout.addWidget(self.time_input)
 
-        self.start_action = QAction("Iniciar", self)
-        self.start_action.triggered.connect(self.start_timer)
-        self.tray_menu.addAction(self.start_action)
-        self.stop_action = QAction("Pausar", self)
-        self.stop_action.triggered.connect(self.stop_timer)
-        self.tray_menu.addAction(self.stop_action)
-        self.reset_action = QAction("Reiniciar", self)
-        self.reset_action.triggered.connect(self.reset_timer)
-        self.tray_menu.addAction(self.reset_action)
-        self.exit_action = QAction("Salir", self)
-        self.exit_action.triggered.connect(QApplication.instance().quit)
-        self.tray_menu.addAction(self.exit_action)
+        # Create button and response label
+        self.add_button = QPushButton("Add Habit/Goal")
+        self.add_button.clicked.connect(self.add_habit_goal)
+        self.response_label = QLabel()
+        main_layout.addLayout(input_layout)
+        main_layout.addWidget(self.add_button)
+        main_layout.addWidget(self.response_label)
 
-        self.tray_icon.setContextMenu(self.tray_menu)
-        self.tray_icon.show()
+        # Create tab widget for data display
+        self.tab_widget = QTabWidget()
+        self.habit_tab = QWidget()
+        self.goal_tab = QWidget()
+        self.tab_widget.addTab(self.habit_tab, "Habit Data")
+        self.tab_widget.addTab(self.goal_tab, "Goal Data")
+        main_layout.addWidget(self.tab_widget)
 
-    def start_timer(self):
-        if not self.timer_running:
-            self.timer.start(1000)
-            self.timer_running = True
+        # Create tables for habit and goal data
+        self.habit_table = QTableWidget()
+        self.habit_table.setColumnCount(2)
+        self.habit_table.setHorizontalHeaderLabels(["Habit", "Time (hrs)"])
+        self.goal_table = QTableWidget()
+        self.goal_table.setColumnCount(2)
+        self.goal_table.setHorizontalHeaderLabels(["Goal", "Time (hrs)"])
+        habit_layout = QVBoxLayout(self.habit_tab)
+        habit_layout.addWidget(self.habit_table)
+        goal_layout = QVBoxLayout(self.goal_tab)
+        goal_layout.addWidget(self.goal_table)
 
-    def stop_timer(self):
-        if self.timer_running:
-            self.timer.stop()
-            self.timer_running = False
+        # Initialize progress data
+        self.habits = []
+        self.goals = []
+        self.times = []
 
-    def reset_timer(self):
-        self.stop_timer()
-        self.time = QTime(0, 0, 0)
-        self.update_display()
+    def add_habit_goal(self):
+        habit = self.habit_input.text()
+        goal = self.goal_input.text()
+        time = self.time_input.text()
+        if habit and goal and time:
+            self.habits.append(habit)
+            self.goals.append(goal)
+            self.times.append(float(time))
+            self.update_tables()
+            self.update_chart()
+            self.response_label.setText("Habit/Goal added successfully.")
+        else:
+            self.response_label.setText("Please fill in all fields.")
 
-    def update_timer(self):
-        self.time = self.time.addSecs(1)
-        self.update_display()
+    def update_tables(self):
+        self.habit_table.setRowCount(len(self.habits))
+        self.goal_table.setRowCount(len(self.goals))
+        for i, habit in enumerate(self.habits):
+            self.habit_table.setItem(i, 0, QTableWidgetItem(habit))
+            self.habit_table.setItem(i, 1, QTableWidgetItem(str(self.times[i])))
+        for i, goal in enumerate(self.goals):
+            self.goal_table.setItem(i, 0, QTableWidgetItem(goal))
+            self.goal_table.setItem(i, 1, QTableWidgetItem(str(self.times[i])))
 
-    def update_display(self):
-        time_string = self.time.toString("hh:mm:ss")
-        self.label.setText(time_string)
-        self.tray_icon.setToolTip(time_string)
-        self.time_action.setText(time_string)  # Actualiza el texto del QAction
+    def update_chart(self):
+        plt.figure(figsize=(8, 6))
+        plt.bar(self.habits, self.times, color="b", label="Habits")
+        plt.bar(self.goals, self.times, color="r", label="Goals")
+        plt.xlabel("Habits/Goals")
+        plt.ylabel("Time (hrs)")
+        plt.title("Progress Chart")
+        plt.legend()
+        plt.xticks(rotation=45, ha="right")
+        plt.tight_layout()
+        plt.show()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = HabitTrackingApp()
     window.show()
-    window.update_display()  # Inicializa la pantalla con el tiempo inicial
     sys.exit(app.exec())

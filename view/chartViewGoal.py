@@ -11,17 +11,7 @@ class ChartViewDay(QWidget):
         self.chart_canvas = None
 
     def setup_chart(self, study_day=None, goal_data=None):
-        plt.rcParams.update({
-            "axes.facecolor": "#2e2e2e",  # Fondo de los ejes
-            "axes.edgecolor": "white",    # Color del borde de los ejes
-            "axes.labelcolor": "white",   # Color de las etiquetas de los ejes
-            "figure.facecolor": "#2e2e2e",  # Fondo de la figura
-            "xtick.color": "white",       # Color de los ticks en el eje x
-            "ytick.color": "white",       # Color de los ticks en el eje y
-            "text.color": "white",        # Color del texto
-            "legend.facecolor": "#2e2e2e",  # Fondo de la leyenda
-            "legend.edgecolor": "white",  # Borde de la leyenda
-        })
+        plt.style.use('seaborn-v0_8-dark-palette')
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.set_title("Study Goals and Progress")
         ax.set_xlabel("Goals")

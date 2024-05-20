@@ -2,7 +2,7 @@ import sys
 import os
 import datetime
 from PySide6.QtCore import Qt, QTimer, QTime, QSize, Signal, QObject
-from PySide6.QtGui import QAction, QIcon, QPixmap, QPainter
+from PySide6.QtGui import QAction, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QVBoxLayout,
@@ -64,7 +64,6 @@ ico_start_timer_path = os.path.join(script_directory, "icons", "start_timer.png"
 ico_stop_timer_path = os.path.join(script_directory, "icons", "stop_timer.png")
 ico_pause_timer_path = os.path.join(script_directory, "icons", "pause_timer.png")
 ico_toggle_timer_path = os.path.join(script_directory, "icons", "toggle_timer.png")
-ico_system_path = os.path.join(script_directory, "icons", "system.png")
 
 class Communicator(QObject):
     reset_signal = Signal()
@@ -473,7 +472,7 @@ class SystemTrayTimer:
 
         # Crear un icono de sistema
         self.tray_icon = QSystemTrayIcon()
-        self.set_tray_icon(ico_system_path)  # Asegúrate de que la ruta del icono sea correcta
+        self.set_tray_icon("path/to/high_resolution_icon.png")  # Asegúrate de que la ruta del icono sea correcta
 
         # Crear un menú para el icono de sistema
         self.tray_menu = QMenu()
