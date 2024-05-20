@@ -1,11 +1,10 @@
+import sys
 import os
-
 import datetime
-
-from PySide6.QtCore import Qt, QTimer, QSize
-from PySide6.QtGui import QAction
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt, QTimer, QTime, QSize, Signal, QObject
+from PySide6.QtGui import QAction, QIcon, QPixmap, QPainter
 from PySide6.QtWidgets import (
+    QApplication,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -17,7 +16,10 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QMainWindow,
     QTableWidget,
-    QFileDialog
+    QFileDialog,
+    QMenu,
+    QSystemTrayIcon,
+    QToolBar
 )
 
 from view.addHabitView import AddHabitView
@@ -36,7 +38,6 @@ from model.addHabitTimeModel import AddHabitTimeModel
 
 from view.chartViewGoal import ChartViewDay
 
-
 from utils.func import (
     clean_fields,
     data_of_table_all,
@@ -45,8 +46,7 @@ from utils.func import (
     delete_from_table,
     message_edit,
     edit_from_table,
-    cb_fill_category_habit,
-
+    cb_fill_category_habit
 )
 from utils.roundIconButton import RoundIconButton
 from utils.validation import validate_fields
@@ -60,14 +60,14 @@ ico_update_path = os.path.join(script_directory, "icons", "update.png")
 ico_delete_path = os.path.join(script_directory, "icons", "delete.png")
 ico_add_path = os.path.join(script_directory, "icons", "add.png")
 ico_refresh_path = os.path.join(script_directory, "icons", "refresh.png")
-ico_start_timer_path = os.path.join(
-    script_directory, "icons", "start_timer.png")
+ico_start_timer_path = os.path.join(script_directory, "icons", "start_timer.png")
 ico_stop_timer_path = os.path.join(script_directory, "icons", "stop_timer.png")
-ico_pause_timer_path = os.path.join(
-    script_directory, "icons", "pause_timer.png")
-ico_toggle_timer_path = os.path.join(
-    script_directory, "icons", "toggle_timer.png")
+ico_pause_timer_path = os.path.join(script_directory, "icons", "pause_timer.png")
+ico_toggle_timer_path = os.path.join(script_directory, "icons", "toggle_timer.png")
+ico_system_path = os.path.join(script_directory, "icons", "system.png")
 
+class Communicator(QObject):
+    reset_signal = Signal()
 
 class MainView(QMainWindow):
     def __init__(self):
@@ -77,7 +77,6 @@ class MainView(QMainWindow):
 
         self.timer_mode = False
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_timer)
         self.elapsed_time = 0
 
         self.timer_time = QTimer(self)
@@ -91,13 +90,19 @@ class MainView(QMainWindow):
         self.study_day_controller = StudyDataController()
         self.goals_controller = GoalDataController()
         self.habit_controller = HabitController()
-        self.controller_ei_database = ExportImportDatabaseController(
-            database_path)
+        self.controller_ei_database = ExportImportDatabaseController(database_path)
 
         self.create_menu_bar()
         self.create_tabs()
         self.toolbar()
         cb_fill_category_habit(self.combo_study_of, self.habit_controller)
+
+        # Inicializar el temporizador en la barra del sistema
+        self.communicator = Communicator()
+        self.tray_timer = SystemTrayTimer(self.update_timer, self.elapsed_time, self.communicator.reset_signal)
+
+        # Conectar la señal de reinicio al método de reinicio
+        self.communicator.reset_signal.connect(self.reset_timer)
 
     def create_menu_bar(self):
         menubar = self.menuBar()
@@ -109,12 +114,10 @@ class MainView(QMainWindow):
         add_goal_action = QAction("Add Goal", self)
 
         export_action = QAction('Export Database', self)
-        export_action.triggered.connect(
-            self.export_database)
+        export_action.triggered.connect(self.export_database)
 
         import_action = QAction('Import Database', self)
-        import_action.triggered.connect(
-            self.import_database)
+        import_action.triggered.connect(self.import_database)
 
         exit_action.triggered.connect(self.close)
         add_habit_action.triggered.connect(self.add_habit_category)
@@ -168,31 +171,39 @@ class MainView(QMainWindow):
 
     def start_timer(self):
         self.timer.start(1000)
+        self.tray_timer.start_timer()
         self.btn_start_timer.setEnabled(False)
         self.btn_pause_timer.setEnabled(True)
         self.btn_stop_timer.setEnabled(True)
 
     def pause_timer(self):
         self.timer.stop()
+        self.tray_timer.stop_timer()
         self.btn_start_timer.setEnabled(True)
         self.btn_pause_timer.setEnabled(False)
         self.btn_stop_timer.setEnabled(True)
 
     def stop_timer(self):
         self.timer.stop()
+        self.tray_timer.stop_timer()
         self.input_minutes_study.setText(str(self.elapsed_time / 60))
-        self.elapsed_time = 0
         self.btn_start_timer.setEnabled(True)
         self.btn_pause_timer.setEnabled(False)
         self.btn_stop_timer.setEnabled(False)
+
+    def reset_timer(self):
+        self.stop_timer()
+        self.elapsed_time = 0
+        self.input_minutes_study.setText("00:00:00")
+        self.tray_timer.update_display(self.elapsed_time)
 
     def update_timer(self):
         self.elapsed_time += 1
         hours = self.elapsed_time // 3600
         minutes = (self.elapsed_time % 3600) // 60
         seconds = self.elapsed_time % 60
-        self.input_minutes_study.setText(
-            f"{hours:02}:{minutes:02}:{seconds:02}")
+        self.input_minutes_study.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
+        self.tray_timer.update_display(self.elapsed_time)
 
     def toggle_timer_manual(self):
         if self.timer_mode:
@@ -215,8 +226,7 @@ class MainView(QMainWindow):
         add_habit_action = QAction(QIcon(ico_habit_path), "Add Habit", self)
         delete_action = QAction(QIcon(ico_delete_path), "Delete", self)
         update_action = QAction(QIcon(ico_update_path), "Update", self)
-        toggle_timer_action = QAction(
-            QIcon(ico_toggle_timer_path), 'Toggle Timer/Manual', self)
+        toggle_timer_action = QAction(QIcon(ico_toggle_timer_path), 'Toggle Timer/Manual', self)
 
         add_habit_action.triggered.connect(self.add_habit_category)
         add_goal_action.triggered.connect(self.add_goal)
@@ -229,6 +239,7 @@ class MainView(QMainWindow):
         toolbar.addAction(delete_action)
         toolbar.addAction(update_action)
         toolbar.addAction(toggle_timer_action)
+
 
     def adjust_icon_size(self, event, btn):
         button_size = btn.size()
@@ -265,8 +276,7 @@ class MainView(QMainWindow):
         self.btn_start_timer = QPushButton()
         self.btn_start_timer.setIcon(QIcon(ico_start_timer_path))
         self.btn_start_timer.setFixedSize(QSize(35, 35))
-        self.btn_start_timer.resizeEvent = lambda event: self.adjust_icon_size(event,
-                                                                               self.btn_start_timer)
+        self.btn_start_timer.resizeEvent = lambda event: self.adjust_icon_size(event, self.btn_start_timer)
         self.btn_start_timer.setToolTip("Start Timer")
         self.btn_start_timer.setEnabled(False)
         self.btn_start_timer.clicked.connect(self.start_timer)
@@ -276,8 +286,7 @@ class MainView(QMainWindow):
         self.btn_pause_timer.setIcon(QIcon(ico_pause_timer_path))
         self.btn_pause_timer.setToolTip("Pause Timer")
         self.btn_pause_timer.setFixedSize(QSize(35, 35))
-        self.btn_pause_timer.resizeEvent = lambda event: self.adjust_icon_size(event,
-                                                                               self.btn_pause_timer)
+        self.btn_pause_timer.resizeEvent = lambda event: self.adjust_icon_size(event, self.btn_pause_timer)
         self.btn_pause_timer.setEnabled(False)
         self.btn_pause_timer.clicked.connect(self.pause_timer)
         ly_ht_btn_timer.addWidget(self.btn_pause_timer)
@@ -286,8 +295,7 @@ class MainView(QMainWindow):
         self.btn_stop_timer.setIcon(QIcon(ico_stop_timer_path))
         self.btn_stop_timer.setToolTip("Stop Timer")
         self.btn_stop_timer.setFixedSize(QSize(35, 35))
-        self.btn_stop_timer.resizeEvent = lambda event: self.adjust_icon_size(event,
-                                                                              self.btn_stop_timer)
+        self.btn_stop_timer.resizeEvent = lambda event: self.adjust_icon_size(event, self.btn_stop_timer)
         self.btn_stop_timer.setEnabled(False)
         self.btn_stop_timer.clicked.connect(self.stop_timer)
         ly_ht_btn_timer.addWidget(self.btn_stop_timer)
@@ -311,8 +319,7 @@ class MainView(QMainWindow):
         self.btn_add = QPushButton('')
         self.btn_add.setIcon(QIcon(ico_add_path))
         self.btn_add.setFixedSize(QSize(35, 35))
-        self.btn_add.resizeEvent = lambda event: self.adjust_icon_size(event,
-                                                                       self.btn_add)
+        self.btn_add.resizeEvent = lambda event: self.adjust_icon_size(event, self.btn_add)
         self.btn_add.setToolTip("Add habit")
         self.btn_add.setShortcut("Ctrl+a")
         self.btn_add.clicked.connect(self.add_habit_time)
@@ -321,8 +328,7 @@ class MainView(QMainWindow):
         btn_update = QPushButton('')
         btn_update.setIcon(QIcon(ico_refresh_path))
         btn_update.setFixedSize(QSize(35, 35))
-        btn_update.resizeEvent = lambda event: self.adjust_icon_size(
-            event, btn_update)
+        btn_update.resizeEvent = lambda event: self.adjust_icon_size(event, btn_update)
         btn_update.setToolTip('Refresh')
         btn_update.setShortcut('Ctrl+r')
         btn_update.clicked.connect(self.refresh)
@@ -350,8 +356,7 @@ class MainView(QMainWindow):
 
         self.table_study_day = QTableWidget()
         self.table_study_day.setColumnCount(3)
-        self.table_study_day.setHorizontalHeaderLabels(
-            ["Habit", "Time", "Date"])
+        self.table_study_day.setHorizontalHeaderLabels(["Habit", "Time", "Date"])
         self.study_day.load(self.table_study_day)
         self.table_study_day.setFocusPolicy(Qt.StrongFocus)
 
@@ -362,9 +367,7 @@ class MainView(QMainWindow):
         self.chart_view_goal = ChartViewDay()
 
         if self.table_goal_data and self.table_study_day_data:
-            self.chart_view_goal.setup_chart(
-                self.table_study_day_data, self.table_goal_data
-            )
+            self.chart_view_goal.setup_chart(self.table_study_day_data, self.table_goal_data)
 
         ly_ht_table_chart.addWidget(self.chart_view_goal)
         layout.addLayout(ly_ht_table_chart)
@@ -420,9 +423,7 @@ class MainView(QMainWindow):
 
         if self.table_goal_data and self.table_study_day_data:
             self.chart_view_goal.clean()
-            self.chart_view_goal.setup_chart(
-                self.table_study_day_data, self.table_goal_data
-            )
+            self.chart_view_goal.setup_chart(self.table_study_day_data, self.table_goal_data)
 
     def delete(self):
         try:
@@ -430,14 +431,12 @@ class MainView(QMainWindow):
                 data = data_of_table(self.table_goal)
                 message_confirm = message_delete()
                 if message_confirm:
-                    delete_from_table(
-                        self.table_goal, self.goals_controller, data)
+                    delete_from_table(self.table_goal, self.goals_controller, data)
             elif self.table_study_day.hasFocus():
                 data = data_of_table(self.table_study_day)
                 message_confirm = message_delete()
                 if message_confirm:
-                    delete_from_table(self.table_study_day,
-                                      self.study_day_controller, data)
+                    delete_from_table(self.table_study_day, self.study_day_controller, data)
         except Exception as e:
             print(e)
         self.refresh()
@@ -448,17 +447,101 @@ class MainView(QMainWindow):
                 data = data_of_table(self.table_goal)
                 message_confirm = message_edit()
                 if message_confirm:
-                    edit_from_table(self.table_goal,
-                                    self.goals_controller,
-                                    data)
+                    edit_from_table(self.table_goal, self.goals_controller, data)
             elif self.table_study_day.hasFocus():
                 data = data_of_table(self.table_study_day)
 
-                study_id = edit_from_table(self.table_study_day,
-                                           self.study_day_controller,
-                                           data)
-                self.controller_update_study_day = UpdateStudyDayHabitController(
-                    self.study_day_controller, study_id)
+                study_id = edit_from_table(self.table_study_day, self.study_day_controller, data)
+                self.controller_update_study_day = UpdateStudyDayHabitController(self.study_day_controller, study_id)
         except Exception as e:
             print(f'Error to update: {e}')
         self.refresh()
+
+class SystemTrayTimer:
+    def __init__(self, update_callback, elapsed_time, reset_signal):
+        self.app = QApplication.instance() or QApplication(sys.argv)
+
+        self.update_callback = update_callback
+        self.elapsed_time = elapsed_time
+        self.reset_signal = reset_signal
+
+        # Configuración del temporizador
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.time = QTime(0, 0, 0)
+        self.timer_running = False
+
+        # Crear un icono de sistema
+        self.tray_icon = QSystemTrayIcon()
+        self.set_tray_icon(ico_system_path)  # Asegúrate de que la ruta del icono sea correcta
+
+        # Crear un menú para el icono de sistema
+        self.tray_menu = QMenu()
+
+        self.time_action = QAction("00:00:00")  # Acción para mostrar el temporizador en tiempo real
+        self.tray_menu.addAction(self.time_action)
+
+        self.start_action = QAction("Iniciar")
+        self.start_action.triggered.connect(self.start_timer)
+        self.tray_menu.addAction(self.start_action)
+
+        self.stop_action = QAction("Pausar")
+        self.stop_action.triggered.connect(self.stop_timer)
+        self.tray_menu.addAction(self.stop_action)
+
+        self.reset_action = QAction("Reiniciar")
+        self.reset_action.triggered.connect(self.reset_timer)
+        self.tray_menu.addAction(self.reset_action)
+
+        self.exit_action = QAction("Salir")
+        self.exit_action.triggered.connect(self.app.quit)
+        self.tray_menu.addAction(self.exit_action)
+
+        self.tray_icon.setContextMenu(self.tray_menu)
+        self.tray_icon.show()
+
+        self.update_display()  # Inicializa la pantalla con el tiempo inicial
+
+    def set_tray_icon(self, icon_path):
+        # Cargar la imagen del icono
+        pixmap = QPixmap(icon_path)
+
+        # Escalar la imagen del icono
+        scaled_pixmap = pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+        # Crear un QIcon a partir del pixmap escalado
+        icon = QIcon(scaled_pixmap)
+
+        # Establecer el icono escalado en el QSystemTrayIcon
+        self.tray_icon.setIcon(icon)
+
+    def start_timer(self):
+        if not self.timer_running:
+            self.timer.start(1000)
+            self.timer_running = True
+
+    def stop_timer(self):
+        if self.timer_running:
+            self.timer.stop()
+            self.timer_running = False
+
+    def reset_timer(self):
+        self.stop_timer()
+        self.elapsed_time = 0
+        self.update_display()
+        self.reset_signal.emit()
+
+    def update_timer(self):
+        self.elapsed_time += 1
+        self.update_callback()
+        self.update_display()
+
+    def update_display(self, elapsed_time=None):
+        if elapsed_time is not None:
+            self.elapsed_time = elapsed_time
+        hours = self.elapsed_time // 3600
+        minutes = (self.elapsed_time % 3600) // 60
+        seconds = self.elapsed_time % 60
+        time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
+        self.tray_icon.setToolTip(time_string)
+        self.time_action.setText(time_string)  # Actualiza el texto del QAction
