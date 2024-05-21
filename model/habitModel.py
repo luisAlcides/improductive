@@ -39,57 +39,74 @@ class HabitModel:
             print("Error getting category habits:", e)
             return []
 
-    def fetch_monthly_data(self):
-        with self.db as cursor:
-            cursor.execute(
-                """
-                SELECT m.name AS month, SUM(h.study_time) AS total_study_time, IFNULL(g.goal, 0) AS goal, c.name AS habit_name
-                FROM habit h
-                JOIN category_habits c ON h.category_id = c.id
-                LEFT JOIN goal g ON c.id = g.category_id AND strftime('%m', h.date_current) = g.month_id
-                LEFT JOIN months m ON g.month_id = m.id
-                GROUP BY m.name, c.name
-            """
-            )
-            return self.clean_data(cursor.fetchall())
+    def execute_query(self, query, params=()):
+        try:
+            with self.db as cursor:
+                cursor.execute(query, params)
+                return cursor.fetchall()
 
-    def fetch_weekly_data(self):
-        with self.db as cursor:
-            cursor.execute(
-                """
-                SELECT strftime('%Y-%W', h.date_current) AS week, SUM(h.study_time) AS total_study_time, NULL AS goal, c.name AS habit_name
-                FROM habit h
-                JOIN category_habits c ON h.category_id = c.id
-                GROUP BY week, c.name
-            """
-            )
-            return self.clean_data(cursor.fetchall())
+        except Exception as e:
+            print("Error executing query:", e)
+            return []
 
-    def fetch_yearly_data(self):
-        with self.db as cursor:
-            cursor.execute(
-                """
-                SELECT strftime('%Y', h.date_current) AS year, SUM(h.study_time) AS total_study_time, NULL AS goal, c.name AS habit_name
-                FROM habit h
-                JOIN category_habits c ON h.category_id = c.id
-                GROUP BY year, c.name
-            """
-            )
-            return self.clean_data(cursor.fetchall())
+    def get_monthly_data(self):
+        today = datetime.date.today()
+        start_of_month = today.replace(day=1)
+        end_of_month = (start_of_month + datetime.timedelta(days=32)).replace(
+            day=1
+        ) - datetime.timedelta(days=1)
 
-    def fetch_data_by_month(self, month):
-        with self.db as cursor:
-            cursor.execute(
-                """
-                SELECT c.name AS habit_name, SUM(h.study_time) AS total_study_time
-                FROM habit h
-                JOIN category_habits c ON h.category_id = c.id
-                WHERE strftime('%m', h.date_current) = ?
-                GROUP BY c.name
-            """,
-                (month,),
-            )
-            return self.clean_data(cursor.fetchall())
+        query = """
+        SELECT ch.name, SUM(h.study_time) as study_time, g.goal, ch.name
+        FROM habit h
+        JOIN category_habits ch ON h.category_id = ch.id
+        LEFT JOIN goal g ON h.category_id = g.category_id
+        WHERE DATE(h.date_current) BETWEEN DATE(?) AND DATE(?)
+        GROUP BY ch.name
+        """
+        return self.execute_query(query, (start_of_month, end_of_month))
+
+    def get_weekly_data(self):
+        today = datetime.date.today()
+        start_of_week = today - datetime.timedelta(days=today.weekday())
+        end_of_week = start_of_week + datetime.timedelta(days=6)
+
+        query = """
+        SELECT ch.name, SUM(h.study_time) as study_time, g.goal, ch.name
+        FROM habit h
+        JOIN category_habits ch ON h.category_id = ch.id
+        LEFT JOIN goal g ON h.category_id = g.category_id
+        WHERE DATE(h.date_current) BETWEEN DATE(?) AND DATE(?)
+        GROUP BY ch.name
+        """
+        return self.execute_query(query, (start_of_week, end_of_week))
+
+    def get_yearly_data(self):
+        today = datetime.date.today()
+        start_of_year = today.replace(month=1, day=1)
+        end_of_year = today.replace(month=12, day=31)
+
+        query = """
+        SELECT ch.name, SUM(h.study_time) as study_time, g.goal, ch.name
+        FROM habit h
+        JOIN category_habits ch ON h.category_id = ch.id
+        LEFT JOIN goal g ON h.category_id = g.category_id
+        WHERE DATE(h.date_current) BETWEEN DATE(?) AND DATE(?)
+        GROUP BY ch.name
+        """
+        return self.execute_query(query, (start_of_year, end_of_year))
+
+    def get_data_by_month(self, month):
+        query = """
+        SELECT ch.name, SUM(h.study_time) as study_time, g.goal, ch.name
+        FROM habit h
+        JOIN category_habits ch ON h.category_id = ch.id
+        LEFT JOIN goal g ON h.category_id = g.category_id
+        JOIN months m ON g.month_id = m.id
+        WHERE m.name = ?
+        GROUP BY ch.name
+        """
+        return self.execute_query(query, (month,))
 
     def was_successful(self):
         return self.success

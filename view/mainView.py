@@ -2,7 +2,7 @@ import sys
 import os
 import datetime
 from PySide6.QtCore import Qt, QTimer, QSize, Signal, QObject
-from PySide6.QtGui import QAction, QIcon, QPixmap
+from PySide6.QtGui import QAction, QIcon, QPixmap, QPalette
 from PySide6.QtWidgets import (
     QApplication,
     QVBoxLayout,
@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 from view.addHabitView import AddHabitView
 from view.addGoalView import AddGoalView
 from view.chartViewAll import ChartViewAll
+from view.monthlySchedule import MonthlySchedule
 
 from connection import Connection
 
@@ -156,11 +157,14 @@ class MainView(QMainWindow):
         tab_widget = QTabWidget()
         tab1 = QWidget()
         tab2 = QWidget()
+        tab3 = QWidget()
 
         self.setup_tab1(tab1)
+        self.setup_tab3(tab3)
         self.setup_tab2(tab2)
 
         tab_widget.addTab(tab1, "Habits")
+        tab_widget.addTab(tab3, "Montly schedule")
         tab_widget.addTab(tab2, "Chart")
         self.setCentralWidget(tab_widget)
 
@@ -427,6 +431,12 @@ class MainView(QMainWindow):
         clean_fields(fields)
         self.refresh()
 
+    def setup_tab3(self, tab):
+        layout = QVBoxLayout()
+        self.montly_schedule = MonthlySchedule()
+        layout.addWidget(self.montly_schedule)
+        tab.setLayout(layout)
+
     def add_habit_category(self):
         self.add_habit_view = AddHabitView()
         self.refresh()
@@ -499,6 +509,7 @@ class MainView(QMainWindow):
         button.resizeEvent = lambda event: self.adjust_icon_size(event, button)
         button.setToolTip(tooltip)
         button.clicked.connect(callback)
+        button.setStyleSheet("QPushButton {background-color: none; border: none;}")
         layout.addWidget(button)
         return button
 

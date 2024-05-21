@@ -18,6 +18,7 @@ stylesheet = """
         height: 25;
     }
 QPushButton {
+    background-color: #f0f0f0; 
     border: none;
     color: #333; /* Color del texto */
     padding: 10px;

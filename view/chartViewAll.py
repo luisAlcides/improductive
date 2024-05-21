@@ -9,7 +9,7 @@ class ChartViewAll(QWidget):
         self.layout = QVBoxLayout(self)
         self.chart_canvas = None
 
-    def setup_chart(self, data, title, xlabel, ylabel):
+    def setup_chart(self, data, title, xlabel, ylabel, chart_type):
         self.clear_chart()
 
         if not data:
@@ -37,18 +37,40 @@ class ChartViewAll(QWidget):
             self.show_message("Error al procesar los datos: " + str(e))
             return
 
-        # Plotting lines for each habit
-        unique_habits = list(set(habits))
-        habit_data = {habit: ([], []) for habit in unique_habits}
+        if chart_type == "line":
+            unique_habits = list(set(habits))
+            habit_data = {habit: ([], []) for habit in unique_habits}
 
-        for label, value, goal, habit in zip(labels, values, goals, habits):
-            habit_data[habit][0].append(label)
-            habit_data[habit][1].append(value)
+            for label, value, goal, habit in zip(labels, values, goals, habits):
+                habit_data[habit][0].append(label)
+                habit_data[habit][1].append(value)
 
-        for habit in unique_habits:
-            ax.plot(habit_data[habit][0], habit_data[habit][1], marker="o", label=habit)
+            for habit in unique_habits:
+                ax.plot(
+                    habit_data[habit][0], habit_data[habit][1], marker="o", label=habit
+                )
+
+        else:
+            x = range(len(labels))
+            ax.bar(x, values, label="Study Time", color="#87CEFA", edgecolor="black")
+            if any(goals):
+                ax.bar(
+                    x,
+                    goals,
+                    label="Goals",
+                    color="#C0BEBC",
+                    edgecolor="black",
+                    alpha=0.5,
+                )
+
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels)
+
+            for i, habit in enumerate(habits):
+                ax.text(x[i], values[i], habit, ha="center", va="bottom")
 
         ax.legend(loc="upper right", fontsize=12)
+        fig.autofmt_xdate()
 
         self.chart_canvas = FigureCanvas(fig)
         self.layout.addWidget(self.chart_canvas)
