@@ -26,7 +26,7 @@ from view.addHabitView import AddHabitView
 from view.addGoalView import AddGoalView
 from view.chartViewAll import ChartViewAll
 from view.monthlySchedule import MonthlySchedule
-from view.chartViewGoal import ChartViewDay
+from view.chartViewDay import ChartViewDay
 
 from connection import Connection
 from controller.habitController import HabitController
