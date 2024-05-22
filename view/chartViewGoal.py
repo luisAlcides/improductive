@@ -17,19 +17,32 @@ class ChartViewDay(QWidget):
         ax.set_title("Study Goals and Progress")
         ax.set_xlabel("Goals")
         ax.set_ylabel("Habits")
+
+        # Leyenda y colores
         legend_labels = [
             "Goal",
-            "Habit within Goal",
-            "< 30% Goal",
-            "30%-50% Goal",
-            "> 50% Goal",
+            "Habit without Goal",
+            ">= 100% of Goal",
+            "75%-99% of Goal",
+            "50%-74% of Goal",
+            "25%-49% of Goal",
+            "< 25% of Goal",
         ]
-        legend_colors = ["#C0BEBC", "#448BDB", "#FA5F4B", "#F9EC8A", "#73FA8E"]
+        legend_colors = [
+            "#C0BEBC",  # Goal
+            "#448BDB",  # Habit without Goal
+            "#00FF00",  # >= 100%
+            "#ADFF2F",  # 75%-99%
+            "#FFFF00",  # 50%-74%
+            "#FFD700",  # 25%-49%
+            "#FF6347",  # < 25%
+        ]
 
         goals_name = []
+        goals = []
         if goal_data:
-            goals = [float(data[1]) for data in goal_data if len(data) >= 1]
-            goals_name = [data[0] for data in goal_data if len(data) >= 1]
+            goals = [float(data[1]) for data in goal_data if len(data) >= 2]
+            goals_name = [data[0] for data in goal_data if len(data) >= 2]
             ax.barh(
                 goals_name,
                 goals,
@@ -41,8 +54,8 @@ class ChartViewDay(QWidget):
             )
 
         if study_day:
-            habits = [float(data[1]) for data in study_day if len(data) >= 1]
-            habits_name = [data[0] for data in study_day if len(data) >= 1]
+            habits = [float(data[1]) for data in study_day if len(data) >= 2]
+            habits_name = [data[0] for data in study_day if len(data) >= 2]
 
             studied_hours = [float(data[1]) for data in study_day if len(data) >= 2]
             colors = []
@@ -53,14 +66,19 @@ class ChartViewDay(QWidget):
                     goal_index = goals_name.index(habit_name)
                     goal = goals[goal_index]
                     percentage = (studied_hours[i] / goal) * 100 if goal != 0 else 0
-                    if percentage <= 30:
-                        colors.append("#FA5F4B")
-                    elif percentage < 50:
-                        colors.append("#F9EC8A")
+                    if percentage >= 100:
+                        colors.append("#00FF00")  # Green for 100% or more
+                    elif percentage >= 75:
+                        colors.append("#ADFF2F")  # YellowGreen for 75% or more
+                    elif percentage >= 50:
+                        colors.append("#FFFF00")  # Yellow for 50% or more
+                    elif percentage >= 25:
+                        colors.append("#FFD700")  # Gold for 25% or more
                     else:
-                        colors.append("#73FA8E")
+                        colors.append("#FF6347")  # Tomato for less than 25%
                 else:
-                    colors.append("#448BDB")
+                    colors.append("#448BDB")  # Blue for habits without goals
+
             ax.barh(
                 habits_name,
                 habits,
