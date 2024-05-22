@@ -2,7 +2,7 @@ import sys
 import os
 import datetime
 from PySide6.QtCore import Qt, QTimer, QSize, Signal, QObject
-from PySide6.QtGui import QAction, QIcon, QPixmap, QPalette
+from PySide6.QtGui import QAction, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QVBoxLayout,
@@ -26,19 +26,16 @@ from view.addHabitView import AddHabitView
 from view.addGoalView import AddGoalView
 from view.chartViewAll import ChartViewAll
 from view.monthlySchedule import MonthlySchedule
+from view.chartViewGoal import ChartViewDay
 
 from connection import Connection
-
 from controller.habitController import HabitController
 from controller.goalDataController import GoalDataController
 from controller.addHabitTimeController import AddHabitTimeController
 from controller.studyDataController import StudyDataController
 from controller.updateStudyDayHabitController import UpdateStudyDayHabitController
 from controller.exportImportDatabaseController import ExportImportDatabaseController
-
 from model.addHabitTimeModel import AddHabitTimeModel
-
-from view.chartViewGoal import ChartViewDay
 
 from utils.func import (
     clean_fields,
@@ -55,6 +52,7 @@ from utils.validation import validate_fields
 script_directory = os.path.dirname(os.path.abspath(__file__))
 database_path = os.path.join(script_directory, "..", "dbimproductive.db")
 
+# Icon paths
 ico_habit_path = os.path.join(script_directory, "icons", "add_habit.png")
 ico_goal_path = os.path.join(script_directory, "icons", "add_goal.png")
 ico_update_path = os.path.join(script_directory, "icons", "update.png")
@@ -72,6 +70,12 @@ class Communicator(QObject):
 
 
 class MainView(QMainWindow):
+    habit_added = Signal()
+    goal_added = Signal()
+    habit_time = Signal()
+    montly_schedule_signal = Signal()
+    add_habit_category_signal = Signal()
+
     def __init__(self):
         super().__init__()
         self.db = Connection()
@@ -89,6 +93,12 @@ class MainView(QMainWindow):
         self.habit_controller = HabitController()
         self.controller_ei_database = ExportImportDatabaseController(database_path)
 
+        self.init_ui()
+        self.create_connections()
+
+        self.update_days_left()
+
+    def init_ui(self):
         self.label_day_left = QLabel()
         self.progress_bar = QProgressBar()
         self.progress_bar.setTextVisible(True)
@@ -110,6 +120,10 @@ class MainView(QMainWindow):
         )
 
         self.create_menu_bar()
+
+        self.montly_schedule = MonthlySchedule()
+        self.chart_view = ChartViewAll(self.habit_controller)
+
         self.create_tabs()
         self.create_toolbar()
         cb_fill_category_habit(self.combo_study_of, self.habit_controller)
@@ -122,7 +136,14 @@ class MainView(QMainWindow):
         self.timer.timeout.connect(self.update_timer_display)
         self.update_current_time()
 
-        self.update_days_left()
+        self.chart_view.update_chart()
+
+    def create_connections(self):
+        self.habit_added.connect(self.chart_view.update_habit_selector)
+        self.goal_added.connect(self.chart_view.update_chart)
+        self.habit_time.connect(self.chart_view.update_chart)
+        self.montly_schedule_signal.connect(self.montly_schedule.trigger_data_update)
+        self.add_habit_category_signal.connect(self.refresh)
 
     def create_menu_bar(self):
         menubar = self.menuBar()
@@ -164,69 +185,9 @@ class MainView(QMainWindow):
         self.setup_tab2(tab2)
 
         tab_widget.addTab(tab1, "Habits")
-        tab_widget.addTab(tab3, "Montly schedule")
+        tab_widget.addTab(tab3, "Monthly schedule")
         tab_widget.addTab(tab2, "Chart")
         self.setCentralWidget(tab_widget)
-
-    def export_database(self):
-        try:
-            destination_path, _ = QFileDialog.getSaveFileName(
-                self, "Export Database", "dbimproductive.db", "Database Files (*.db)"
-            )
-            if destination_path:
-                self.controller_ei_database.exportDatabase(destination_path)
-        except Exception as e:
-            print(f"Error to export database: {e}")
-
-    def import_database(self):
-        try:
-            source_path, _ = QFileDialog.getOpenFileName(
-                self, "Import Database", "", "Database Files (*.db)"
-            )
-            if source_path:
-                self.controller_ei_database.importDatabase(source_path)
-        except Exception as e:
-            print(f"Error to import database: {e}")
-
-    def start_timer(self):
-        self.timer.start(1000)
-        self.btn_start_timer.setEnabled(False)
-        self.btn_pause_timer.setEnabled(True)
-        self.btn_stop_timer.setEnabled(True)
-
-    def pause_timer(self):
-        self.timer.stop()
-        self.btn_start_timer.setEnabled(True)
-        self.btn_pause_timer.setEnabled(False)
-        self.btn_stop_timer.setEnabled(True)
-
-    def stop_timer(self):
-        self.timer.stop()
-        self.input_minutes_study.setText(str(self.elapsed_time / 60))
-        self.btn_start_timer.setEnabled(True)
-        self.btn_pause_timer.setEnabled(False)
-        self.btn_stop_timer.setEnabled(False)
-
-    def reset_timer(self):
-        self.stop_timer()
-        self.elapsed_time = 0
-        self.input_minutes_study.setText("00:00:00")
-        self.tray_timer.update_display(self.elapsed_time)
-
-    def update_timer_display(self):
-        self.elapsed_time += 1
-        hours = self.elapsed_time // 3600
-        minutes = (self.elapsed_time % 3600) // 60
-        seconds = self.elapsed_time % 60
-        self.input_minutes_study.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
-        self.tray_timer.update_display(self.elapsed_time)
-
-    def toggle_timer_manual(self):
-        self.timer_mode = not self.timer_mode
-        self.input_minutes_study.setReadOnly(self.timer_mode)
-        self.btn_start_timer.setEnabled(self.timer_mode)
-        self.btn_stop_timer.setEnabled(self.timer_mode)
-        self.btn_pause_timer.setEnabled(self.timer_mode)
 
     def create_toolbar(self):
         toolbar = self.addToolBar("Toolbar")
@@ -254,28 +215,6 @@ class MainView(QMainWindow):
             ]
         )
 
-    def adjust_icon_size(self, event, btn):
-        button_size = btn.size()
-        btn.setIconSize(button_size)
-
-    def update_current_time(self):
-        current_time = datetime.datetime.now().strftime("%I:%M %p")
-        self.label_current_time.setText(current_time)
-        current_date = datetime.datetime.now().strftime("%A %d %B %Y")
-        self.label_current_date.setText(current_date)
-
-    def update_days_left(self):
-        today = datetime.datetime.today()
-        end_of_year = datetime.datetime(today.year, 12, 31)
-        start_of_year = datetime.datetime(today.year, 1, 1)
-        days_left = (end_of_year - today).days
-        total_days = (end_of_year - start_of_year).days
-        progress = ((total_days - days_left) / total_days) * 100
-
-        self.label_day_left.setText(f"Days to end the year")
-        self.progress_bar.setValue(progress)
-        self.progress_bar.setFormat(f"{days_left} days left")
-
     def setup_tab1(self, tab):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignHCenter)
@@ -298,7 +237,6 @@ class MainView(QMainWindow):
         ly_vt_table.addWidget(self.progress_bar)
 
         self.update_days_left()
-
         self.update_current_time()
 
         self.btn_start_timer = self.create_timer_button(
@@ -376,8 +314,90 @@ class MainView(QMainWindow):
         layout.addWidget(self.chart_view)
         tab.setLayout(layout)
 
-    def load_goals(self, table, month):
-        self.goals_controller.load_goals(table, month)
+    def setup_tab3(self, tab):
+        layout = QVBoxLayout()
+        layout.addWidget(self.montly_schedule)
+        tab.setLayout(layout)
+
+    def export_database(self):
+        try:
+            destination_path, _ = QFileDialog.getSaveFileName(
+                self, "Export Database", "dbimproductive.db", "Database Files (*.db)"
+            )
+            if destination_path:
+                self.controller_ei_database.exportDatabase(destination_path)
+        except Exception as e:
+            print(f"Error to export database: {e}")
+
+    def import_database(self):
+        try:
+            source_path, _ = QFileDialog.getOpenFileName(
+                self, "Import Database", "", "Database Files (*.db)"
+            )
+            if source_path:
+                self.controller_ei_database.importDatabase(source_path)
+        except Exception as e:
+            print(f"Error to import database: {e}")
+
+    def start_timer(self):
+        self.timer.start(1000)
+        self.btn_start_timer.setEnabled(False)
+        self.btn_pause_timer.setEnabled(True)
+        self.btn_stop_timer.setEnabled(True)
+
+    def pause_timer(self):
+        self.timer.stop()
+        self.btn_start_timer.setEnabled(True)
+        self.btn_pause_timer.setEnabled(False)
+        self.btn_stop_timer.setEnabled(True)
+
+    def stop_timer(self):
+        self.timer.stop()
+        self.input_minutes_study.setText(str(self.elapsed_time / 60))
+        self.btn_start_timer.setEnabled(True)
+        self.btn_pause_timer.setEnabled(False)
+        self.btn_stop_timer.setEnabled(False)
+
+    def reset_timer(self):
+        self.stop_timer()
+        self.elapsed_time = 0
+        self.input_minutes_study.setText("00:00:00")
+        self.tray_timer.update_display(self.elapsed_time)
+
+    def update_timer_display(self):
+        self.elapsed_time += 1
+        hours = self.elapsed_time // 3600
+        minutes = (self.elapsed_time % 3600) // 60
+        seconds = self.elapsed_time % 60
+        self.input_minutes_study.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
+        self.tray_timer.update_display(self.elapsed_time)
+
+    def toggle_timer_manual(self):
+        self.timer_mode = not self.timer_mode
+        self.input_minutes_study.setReadOnly(self.timer_mode)
+        self.btn_start_timer.setEnabled(self.timer_mode)
+        self.btn_stop_timer.setEnabled(self.timer_mode)
+        self.btn_pause_timer.setEnabled(self.timer_mode)
+
+    def add_habit_category(self):
+        self.add_habit_view = AddHabitView()
+        self.add_habit_view.show()
+        self.add_habit_view.habit_added.connect(self.on_habit_added)
+
+    def on_habit_added(self):
+        self.refresh()
+        self.habit_added.emit()
+        self.montly_schedule_signal.emit()
+
+    def add_goal(self):
+        self.add_goal_view = AddGoalView()
+        self.add_goal_view.show()
+        self.add_goal_view.goal_added.connect(self.on_goal_added)
+
+    def on_goal_added(self):
+        self.refresh()
+        self.goal_added.emit()
+        self.montly_schedule_signal.emit()
 
     def add_habit_time(self):
         fields = [
@@ -396,20 +416,8 @@ class MainView(QMainWindow):
         self.study_day.add_habit(model)
         clean_fields(fields)
         self.refresh()
-
-    def setup_tab3(self, tab):
-        layout = QVBoxLayout()
-        self.montly_schedule = MonthlySchedule()
-        layout.addWidget(self.montly_schedule)
-        tab.setLayout(layout)
-
-    def add_habit_category(self):
-        self.add_habit_view = AddHabitView()
-        self.refresh()
-
-    def add_goal(self):
-        self.add_goal_view = AddGoalView()
-        self.refresh()
+        self.habit_time.emit()
+        self.montly_schedule_signal.emit()
 
     def refresh(self):
         cb_fill_category_habit(self.combo_study_of, self.habit_controller)
@@ -420,6 +428,7 @@ class MainView(QMainWindow):
         self.montly_schedule.trigger_data_update()
 
         self.update_chart()
+        self.chart_view.update_chart()
 
     def update_chart(self):
         self.table_goal_data = data_of_table_all(self.table_goal)
@@ -469,6 +478,9 @@ class MainView(QMainWindow):
             print(f"Error to update: {e}")
         self.refresh()
 
+    def load_goals(self, table, month):
+        self.goals_controller.load_goals(table, month)
+
     def create_timer_button(self, icon_path, tooltip, callback, layout):
         button = QPushButton()
         button.setIcon(QIcon(icon_path))
@@ -479,6 +491,28 @@ class MainView(QMainWindow):
         button.setStyleSheet("QPushButton {background-color: none; border: none;}")
         layout.addWidget(button)
         return button
+
+    def adjust_icon_size(self, event, btn):
+        button_size = btn.size()
+        btn.setIconSize(button_size)
+
+    def update_current_time(self):
+        current_time = datetime.datetime.now().strftime("%I:%M %p")
+        self.label_current_time.setText(current_time)
+        current_date = datetime.datetime.now().strftime("%A %d %B %Y")
+        self.label_current_date.setText(current_date)
+
+    def update_days_left(self):
+        today = datetime.datetime.today()
+        end_of_year = datetime.datetime(today.year, 12, 31)
+        start_of_year = datetime.datetime(today.year, 1, 1)
+        days_left = (end_of_year - today).days
+        total_days = (end_of_year - start_of_year).days
+        progress = ((total_days - days_left) / total_days) * 100
+
+        self.label_day_left.setText(f"Days to end the year")
+        self.progress_bar.setValue(progress)
+        self.progress_bar.setFormat(f"{days_left} days left")
 
 
 class SystemTrayTimer:
@@ -531,3 +565,10 @@ class SystemTrayTimer:
         time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
         self.tray_icon.setToolTip(time_string)
         self.time_action.setText(time_string)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    main_view = MainView()
+    main_view.show()
+    sys.exit(app.exec())

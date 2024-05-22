@@ -84,7 +84,7 @@ class HabitModel:
     def get_yearly_data(self, habit_name):
         query = """
         SELECT 
-            strftime('%m', h.date_current) AS month, 
+            substr(h.date_current, 4, 2) AS month, 
             COALESCE(SUM(h.study_time), 0) AS study_time, 
             COALESCE(g.goal, 0) AS goal
         FROM 
@@ -96,9 +96,9 @@ class HabitModel:
         WHERE 
             ch.name = ?
         GROUP BY 
-            strftime('%m', h.date_current), g.goal
+            substr(h.date_current, 4, 2), g.goal
         ORDER BY 
-            strftime('%m', h.date_current)
+            substr(h.date_current, 4, 2)
         """
         data = self.execute_query(query, (habit_name,))
 

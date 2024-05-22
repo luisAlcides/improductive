@@ -1,5 +1,12 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+)
 from utils.validation import validate_fields
 from utils.func import message, clean_fields
 
@@ -10,7 +17,7 @@ from model.habitModel import HabitModel
 
 
 class AddHabitView(QMainWindow):
-    TITLE_WINDOW = 'Add Habit'
+    TITLE_WINDOW = "Add Habit"
     habit_added = Signal()
 
     def __init__(self):
@@ -28,7 +35,7 @@ class AddHabitView(QMainWindow):
         layout.setAlignment(Qt.AlignHCenter)
 
         # labels
-        label_habit = QLabel('Habit or Event')
+        label_habit = QLabel("Habit or Event")
         label_habit.setAlignment(Qt.AlignCenter)
         label_habit.setFixedHeight(20)
 
@@ -36,10 +43,10 @@ class AddHabitView(QMainWindow):
         input_habit = QLineEdit()
 
         # buttons
-        btn_add = QPushButton('Add')
+        btn_add = QPushButton("Add")
         btn_add.clicked.connect(self.add_habit)
 
-        self.fields = [[input_habit, 'text', label_habit]]
+        self.fields = [[input_habit, "text", label_habit]]
 
         layout.addWidget(label_habit)
         layout.addWidget(input_habit)
@@ -59,7 +66,8 @@ class AddHabitView(QMainWindow):
         controller = HabitController()
         controller.insert_into_habits(name_habit)
         if controller.was_successful():
-            message('Habit add correctly')
+            message("Habit add correctly")
             clean_fields(self.fields)
         else:
-            message('Error adding habit')
+            message("Error adding habit")
+        self.habit_added.emit()

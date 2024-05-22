@@ -1,13 +1,14 @@
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QMessageBox,
     QComboBox,
     QPushButton,
     QHBoxLayout,
+    QMessageBox,
 )
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
+import datetime
 
 
 class ChartViewAll(QWidget):
@@ -36,11 +37,13 @@ class ChartViewAll(QWidget):
                 "December",
             ]
         )
+        self.set_current_month()
         self.month_selector.currentTextChanged.connect(self.update_chart)
 
         # Add combobox for selecting habit
         self.habit_selector = QComboBox()
         self.update_habit_selector()
+        self.habit_selector.currentTextChanged.connect(self.update_chart)
 
         # Add buttons for switching between monthly and yearly view
         btn_layout = QHBoxLayout()
@@ -58,6 +61,13 @@ class ChartViewAll(QWidget):
 
         self.layout.addLayout(btn_layout)
         self.layout.addLayout(cb_layout)
+
+        # Set default view mode and update chart
+        self.switch_to_monthly()
+
+    def set_current_month(self):
+        current_month = datetime.datetime.now().month - 1
+        self.month_selector.setCurrentIndex(current_month)
 
     def switch_to_monthly(self):
         self.view_mode = "Monthly"
@@ -198,8 +208,17 @@ class ChartViewAll(QWidget):
             values = list(values.values())
             goals = list(goals.values())
 
+            max_value = max(values)
+            min_value = min(values)
             x = range(len(labels))
-            colors = ["#73FA8E" if v > 0 else "#FF6347" for v in values]
+            colors = []
+            for value in values:
+                if max_value > min_value:
+                    color_ratio = (value - min_value) / (max_value - min_value)
+                else:
+                    color_ratio = 0
+                color = plt.cm.RdYlGn(color_ratio)
+                colors.append(color)
 
             ax.bar(
                 x,
@@ -212,9 +231,10 @@ class ChartViewAll(QWidget):
             )
 
             if any(goals):
+                goals_filtered = [goal if goal > 0 else None for goal in goals]
                 ax.bar(
                     x,
-                    goals,
+                    [goal if goal is not None else 0 for goal in goals_filtered],
                     width=bar_width,
                     label="Goals",
                     color="#C0BEBC",
@@ -230,7 +250,16 @@ class ChartViewAll(QWidget):
 
         ax.yaxis.grid(True, linestyle="--", alpha=0.6)
         ax.xaxis.grid(False)
-        ax.legend(loc="upper right", fontsize=12)
+        ax.legend(
+            handles=[
+                plt.Line2D([0], [0], color="#00FF00", lw=4, label=">= 100%"),
+                plt.Line2D([0], [0], color="#ADFF2F", lw=4, label=">= 75%"),
+                plt.Line2D([0], [0], color="#FFFF00", lw=4, label=">= 50%"),
+                plt.Line2D([0], [0], color="#FFD700", lw=4, label=">= 25%"),
+                plt.Line2D([0], [0], color="#FF6347", lw=4, label="< 25% / No Goal"),
+            ],
+            loc="upper right",
+        )
         fig.autofmt_xdate()
 
         self.chart_canvas = FigureCanvas(fig)

@@ -1,5 +1,13 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+)
 from utils.validation import validate_fields
 from utils.func import message, clean_fields
 
@@ -11,8 +19,9 @@ from PySide6.QtWidgets import QComboBox
 
 
 class AddGoalView(QMainWindow):
-    TITLE_WINDOW = 'Add Goal'
+    TITLE_WINDOW = "Add Goal"
     habit_added = Signal()
+    goal_added = Signal()
 
     def __init__(self):
         super().__init__()
@@ -29,21 +38,21 @@ class AddGoalView(QMainWindow):
         layout.setAlignment(Qt.AlignHCenter)
 
         # labels
-        label_goal = QLabel('Goal in hours')
+        label_goal = QLabel("Goal in hours")
         label_goal.setAlignment(Qt.AlignCenter)
         layout.addWidget(label_goal)
 
         input_goal = QLineEdit()
         layout.addWidget(input_goal)
 
-        label_habit = QLabel('Habit')
+        label_habit = QLabel("Habit")
         layout.addWidget(label_habit)
 
         cb_habit = QComboBox()
         self.fill_cb_habit(cb_habit)
         layout.addWidget(cb_habit)
 
-        label_month = QLabel('Month')
+        label_month = QLabel("Month")
         layout.addWidget(label_month)
 
         cb_month = QComboBox()
@@ -53,12 +62,14 @@ class AddGoalView(QMainWindow):
         layout.addWidget(cb_month)
 
         # buttons
-        btn_add = QPushButton('Add')
+        btn_add = QPushButton("Add")
         btn_add.clicked.connect(self.add_goal)
 
-        self.fields = [[input_goal, 'number', label_goal],
-                       [cb_habit, 'cb', label_habit],
-                       [cb_month, 'cb', label_month]]
+        self.fields = [
+            [input_goal, "number", label_goal],
+            [cb_habit, "cb", label_habit],
+            [cb_month, "cb", label_month],
+        ]
 
         layout.addWidget(btn_add)
 
@@ -88,7 +99,9 @@ class AddGoalView(QMainWindow):
         controller = GoalDataController()
         controller.add_goal(input_goal, cb_habit, cb_month)
         if controller.was_successful():
-            message('Goal add corrently')
+            message("Goal add corrently")
             clean_fields(self.fields)
         else:
-            message('Error adding habit')
+            message("Error adding habit")
+
+        self.goal_added.emit()
