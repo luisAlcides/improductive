@@ -17,18 +17,23 @@ class HabitController:
     def was_successful(self):
         return self.model.was_successful()
 
-    def show_weekly_data(self, view):
+    def show_weekly_data(self):
         data = self.model.get_weekly_data()
-        view.setup_chart(data, "Weekly Study Time", "Days", "Hours", "bar")
+        return data
 
-    def show_monthly_data(self, view):
+    def show_monthly_data(self):
         data = self.model.get_monthly_data()
-        view.setup_chart(data, "Monthly Study Time", "Days", "Hours", "line")
+        return data
 
-    def show_yearly_data(self, view):
-        data = self.model.get_yearly_data()
-        view.setup_chart(data, "Yearly Study Time", "Months", "Hours", "line")
+    def show_data_by_year(self, habit):
+        data = self.model.get_yearly_data(habit)
 
-    def show_data_by_month(self, month, view):
+        formatted_data = []
+        for row in data:
+            month, total_hours, goal = row
+            formatted_data.append((month, total_hours, goal))
+        return formatted_data
+
+    def show_data_by_month(self, month):
         data = self.model.get_data_by_month(month)
-        view.setup_chart(data, f"Study Time for {month}", "Habits", "Hours", "bar")
+        return data

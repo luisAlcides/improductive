@@ -81,29 +81,49 @@ class HabitModel:
         """
         return self.execute_query(query, (start_of_week, end_of_week))
 
-    def get_yearly_data(self):
-        today = datetime.date.today()
-        start_of_year = today.replace(month=1, day=1)
-        end_of_year = today.replace(month=12, day=31)
-
+    def get_yearly_data(self, habit_name):
         query = """
-        SELECT ch.name, SUM(h.study_time) as study_time, g.goal, ch.name
-        FROM habit h
-        JOIN category_habits ch ON h.category_id = ch.id
-        LEFT JOIN goal g ON h.category_id = g.category_id
-        WHERE DATE(h.date_current) BETWEEN DATE(?) AND DATE(?)
-        GROUP BY ch.name
+        SELECT 
+            strftime('%m', h.date_current) AS month, 
+            COALESCE(SUM(h.study_time), 0) AS study_time, 
+            COALESCE(g.goal, 0) AS goal
+        FROM 
+            habit h
+        JOIN 
+            category_habits ch ON h.category_id = ch.id
+        LEFT JOIN 
+            goal g ON (h.category_id = g.category_id AND strftime('%m', h.date_current) = strftime('%m', g.date_current))
+        WHERE 
+            ch.name = ?
+        GROUP BY 
+            strftime('%m', h.date_current), g.goal
+        ORDER BY 
+            strftime('%m', h.date_current)
         """
-        return self.execute_query(query, (start_of_year, end_of_year))
+        data = self.execute_query(query, (habit_name,))
+
+        # Fill in missing months with zero study time and no goal
+        all_months = {f"{i:02d}": [0, 0] for i in range(1, 13)}
+
+        for row in data:
+            month, study_time, goal = row
+            if month:
+                all_months[month] = [study_time, goal]
+
+        formatted_data = [
+            (month, values[0], values[1]) for month, values in all_months.items()
+        ]
+        formatted_data.sort(key=lambda x: x[0])  # Sort by month
+
+        return formatted_data
 
     def get_data_by_month(self, month):
         query = """
         SELECT ch.name, SUM(h.study_time) as study_time, g.goal, ch.name
         FROM habit h
         JOIN category_habits ch ON h.category_id = ch.id
-        LEFT JOIN goal g ON h.category_id = g.category_id
-        JOIN months m ON g.month_id = m.id
-        WHERE m.name = ?
+        LEFT JOIN goal g ON (h.category_id = g.category_id AND substr(h.date_current, 4 , 2) = substr(g.date_current, 4, 2))
+        WHERE substr(h.date_current, 4, 2) = ?
         GROUP BY ch.name
         """
         return self.execute_query(query, (month,))

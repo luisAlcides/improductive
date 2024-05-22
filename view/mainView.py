@@ -372,6 +372,7 @@ class MainView(QMainWindow):
     def setup_tab2(self, tab):
         layout = QVBoxLayout()
         self.chart_view = ChartViewAll(self.habit_controller)
+        self.chart_view.update_chart()
         layout.addWidget(self.chart_view)
         tab.setLayout(layout)
 

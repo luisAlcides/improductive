@@ -16,6 +16,7 @@ class ChartViewAll(QWidget):
         self.habit_controller = habit_controller
         self.layout = QVBoxLayout(self)
         self.chart_canvas = None
+        self.view_mode = "Monthly"
 
         # Add combobox for selecting month
         self.month_selector = QComboBox()
@@ -42,17 +43,33 @@ class ChartViewAll(QWidget):
         self.update_habit_selector()
 
         # Add buttons for switching between monthly and yearly view
-        self.button_layout = QHBoxLayout()
+        btn_layout = QHBoxLayout()
         self.btn_monthly = QPushButton("Monthly")
         self.btn_yearly = QPushButton("Yearly")
-        self.btn_monthly.clicked.connect(self.update_chart)
-        self.btn_yearly.clicked.connect(self.update_chart)
-        self.button_layout.addWidget(self.btn_monthly)
-        self.button_layout.addWidget(self.btn_yearly)
+        self.btn_monthly.clicked.connect(self.switch_to_monthly)
+        self.btn_yearly.clicked.connect(self.switch_to_yearly)
 
-        self.layout.addWidget(self.habit_selector)
-        self.layout.addWidget(self.month_selector)
-        self.layout.addLayout(self.button_layout)
+        btn_layout.addWidget(self.btn_monthly)
+        btn_layout.addWidget(self.btn_yearly)
+
+        cb_layout = QHBoxLayout()
+        cb_layout.addWidget(self.habit_selector)
+        cb_layout.addWidget(self.month_selector)
+
+        self.layout.addLayout(btn_layout)
+        self.layout.addLayout(cb_layout)
+
+    def switch_to_monthly(self):
+        self.view_mode = "Monthly"
+        self.month_selector.setEnabled(True)
+        self.habit_selector.setEnabled(False)
+        self.update_chart()
+
+    def switch_to_yearly(self):
+        self.view_mode = "Yearly"
+        self.month_selector.setEnabled(False)
+        self.habit_selector.setEnabled(True)
+        self.update_chart()
 
     def update_habit_selector(self):
         self.habit_selector.clear()
@@ -62,46 +79,157 @@ class ChartViewAll(QWidget):
 
     def update_chart(self):
         self.clear_chart()
-        selected_month = self.month_selector.currentText()
-        selected_habit = self.habit_selector.currentText()
-        if self.btn_monthly.isChecked():
-            data = self.habit_controller.model.get_data_by_month(selected_month)
-        else:
-            data = self.habit_controller.model.get_yearly_data()
-
-        if not data:
-            self.show_message("No hay suficientes datos para graficar.")
-            return
-
         plt.style.use("seaborn-v0_8-dark-palette")
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.set_title(
-            f"{'Monthly' if self.btn_monthly.isChecked() else 'Yearly'} Study Time for {selected_habit}"
-        )
-        ax.set_xlabel("Days" if self.btn_monthly.isChecked() else "Months")
-        ax.set_ylabel("Hours")
+        fig, ax = plt.subplots(figsize=(12, 6))
 
-        labels, values, goals = [], [], []
-        for d in data:
-            if d[0] == selected_habit:
+        if self.view_mode == "Monthly":
+            selected_month = self.month_selector.currentText()
+            month_num = self.month_selector.findText(selected_month) + 1
+            month_num = str(month_num).zfill(2)
+            data = self.habit_controller.show_data_by_month(month_num)
+
+            if not data:
+                self.show_message("No hay suficientes datos para graficar.")
+                return
+
+            ax.set_title(f"{self.view_mode} Study Time")
+            ax.set_xlabel("Habits")
+            ax.set_ylabel("Hours")
+            bar_width = 0.6
+
+            labels, values, goals = [], [], []
+            for d in data:
                 labels.append(d[0])
                 values.append(d[1])
-                goals.append(d[2])
+                goals.append(d[2] if d[2] is not None else 0)
 
-        x = range(len(labels))
-        colors = ["#73FA8E" if v >= g else "#FF6347" for v, g in zip(values, goals)]
-        ax.bar(x, values, label="Study Time", color=colors, edgecolor="black")
-        if any(goals):
+            x = range(len(labels))
+            colors = []
+            for value, goal in zip(values, goals):
+                if goal > 0:
+                    ratio = value / goal
+                    if ratio >= 1:
+                        colors.append("#00FF00")  # Green for 100% or more
+                    elif ratio >= 0.75:
+                        colors.append("#ADFF2F")  # YellowGreen for 75% or more
+                    elif ratio >= 0.5:
+                        colors.append("#FFFF00")  # Yellow for 50% or more
+                    elif ratio >= 0.25:
+                        colors.append("#FFD700")  # Gold for 25% or more
+                    else:
+                        colors.append("#FF6347")  # Tomato for less than 25%
+                else:
+                    colors.append("#FF6347")  # Tomato if no goal
+
             ax.bar(
-                x, goals, label="Goals", color="#C0BEBC", edgecolor="black", alpha=0.5
+                x,
+                values,
+                width=bar_width,
+                label="Study Time",
+                color=colors,
+                edgecolor="black",
+                alpha=0.5,
             )
 
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels)
+            if any(goals):
+                ax.bar(
+                    x,
+                    goals,
+                    width=bar_width,
+                    label="Goals",
+                    color="#C0BEBC",
+                    edgecolor="black",
+                    alpha=0.5,
+                )
 
-        for i, label in enumerate(labels):
-            ax.text(x[i], values[i], label, ha="center", va="bottom")
+            if len(labels) == 1:
+                x_min = -0.5
+                x_max = 0.5
+            else:
+                x_min = -0.5
+                x_max = len(labels) - 0.5
 
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels, rotation=45, ha="right")
+            ax.set_xlim(x_min, x_max)
+
+            for i, label in enumerate(labels):
+                ax.text(i, values[i], values[i], ha="center", va="bottom")
+
+        elif self.view_mode == "Yearly":
+            selected_habit = self.habit_selector.currentText()
+            data = self.habit_controller.show_data_by_year(selected_habit)
+
+            if not data:
+                self.show_message("No hay suficientes datos para graficar.")
+                return
+
+            ax.set_title(f"{self.view_mode} Study Time for {selected_habit}")
+            ax.set_xlabel("Months")
+            ax.set_ylabel("Hours")
+            bar_width = 0.6
+
+            months = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ]
+            values = {month: 0 for month in months}
+            goals = {month: 0 for month in months}
+
+            for d in data:
+                month_num, total_hours, goal = d
+                if month_num is not None:
+                    month_index = int(month_num) - 1
+                    month_name = months[month_index]
+                    values[month_name] = total_hours
+                    goals[month_name] = goal
+
+            labels = list(values.keys())
+            values = list(values.values())
+            goals = list(goals.values())
+
+            x = range(len(labels))
+            colors = ["#73FA8E" if v > 0 else "#FF6347" for v in values]
+
+            ax.bar(
+                x,
+                values,
+                width=bar_width,
+                label="Study Time",
+                color=colors,
+                edgecolor="black",
+                alpha=0.5,
+            )
+
+            if any(goals):
+                ax.bar(
+                    x,
+                    goals,
+                    width=bar_width,
+                    label="Goals",
+                    color="#C0BEBC",
+                    edgecolor="black",
+                    alpha=0.5,
+                )
+
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels, rotation=45, ha="right")
+
+            for i, label in enumerate(labels):
+                ax.text(i, values[i], values[i], ha="center", va="bottom")
+
+        ax.yaxis.grid(True, linestyle="--", alpha=0.6)
+        ax.xaxis.grid(False)
         ax.legend(loc="upper right", fontsize=12)
         fig.autofmt_xdate()
 
