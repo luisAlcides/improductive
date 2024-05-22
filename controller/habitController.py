@@ -1,12 +1,15 @@
 from model.habitModel import HabitModel
+from view.monthlySchedule import MonthlySchedule
 
 
 class HabitController:
     def __init__(self):
         self.model = HabitModel()
+        self.monthly_schedule = MonthlySchedule()
 
     def insert_into_habits(self, category):
         self.model.insert_into_habits(category)
+        self.monthly_schedule.trigger_data_update()
 
     def get_category_habits(self):
         return self.model.get_category_habits()

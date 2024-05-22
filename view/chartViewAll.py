@@ -1,16 +1,73 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QMessageBox,
+    QComboBox,
+    QPushButton,
+    QHBoxLayout,
+)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
 
 class ChartViewAll(QWidget):
-    def __init__(self):
+    def __init__(self, habit_controller):
         super().__init__()
+        self.habit_controller = habit_controller
         self.layout = QVBoxLayout(self)
         self.chart_canvas = None
 
-    def setup_chart(self, data, title, xlabel, ylabel, chart_type):
+        # Add combobox for selecting month
+        self.month_selector = QComboBox()
+        self.month_selector.addItems(
+            [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ]
+        )
+        self.month_selector.currentTextChanged.connect(self.update_chart)
+
+        # Add combobox for selecting habit
+        self.habit_selector = QComboBox()
+        self.update_habit_selector()
+
+        # Add buttons for switching between monthly and yearly view
+        self.button_layout = QHBoxLayout()
+        self.btn_monthly = QPushButton("Monthly")
+        self.btn_yearly = QPushButton("Yearly")
+        self.btn_monthly.clicked.connect(self.update_chart)
+        self.btn_yearly.clicked.connect(self.update_chart)
+        self.button_layout.addWidget(self.btn_monthly)
+        self.button_layout.addWidget(self.btn_yearly)
+
+        self.layout.addWidget(self.habit_selector)
+        self.layout.addWidget(self.month_selector)
+        self.layout.addLayout(self.button_layout)
+
+    def update_habit_selector(self):
+        self.habit_selector.clear()
+        habits = self.habit_controller.get_category_habits()
+        for habit in habits:
+            self.habit_selector.addItem(habit[0])
+
+    def update_chart(self):
         self.clear_chart()
+        selected_month = self.month_selector.currentText()
+        selected_habit = self.habit_selector.currentText()
+        if self.btn_monthly.isChecked():
+            data = self.habit_controller.model.get_data_by_month(selected_month)
+        else:
+            data = self.habit_controller.model.get_yearly_data()
 
         if not data:
             self.show_message("No hay suficientes datos para graficar.")
@@ -18,56 +75,32 @@ class ChartViewAll(QWidget):
 
         plt.style.use("seaborn-v0_8-dark-palette")
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.set_title(title)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
+        ax.set_title(
+            f"{'Monthly' if self.btn_monthly.isChecked() else 'Yearly'} Study Time for {selected_habit}"
+        )
+        ax.set_xlabel("Days" if self.btn_monthly.isChecked() else "Months")
+        ax.set_ylabel("Hours")
 
-        try:
-            cleaned_data = [
-                (
-                    d[0] if len(d) > 0 and d[0] is not None else "",
-                    d[1] if len(d) > 1 and d[1] is not None else 0,
-                    d[2] if len(d) > 2 and d[2] is not None else 0,
-                    d[3] if len(d) > 3 and d[3] is not None else "",
-                )
-                for d in data
-            ]
-            labels, values, goals, habits = zip(*cleaned_data)
-        except ValueError as e:
-            self.show_message("Error al procesar los datos: " + str(e))
-            return
+        labels, values, goals = [], [], []
+        for d in data:
+            if d[0] == selected_habit:
+                labels.append(d[0])
+                values.append(d[1])
+                goals.append(d[2])
 
-        if chart_type == "line":
-            unique_habits = list(set(habits))
-            habit_data = {habit: ([], []) for habit in unique_habits}
+        x = range(len(labels))
+        colors = ["#73FA8E" if v >= g else "#FF6347" for v, g in zip(values, goals)]
+        ax.bar(x, values, label="Study Time", color=colors, edgecolor="black")
+        if any(goals):
+            ax.bar(
+                x, goals, label="Goals", color="#C0BEBC", edgecolor="black", alpha=0.5
+            )
 
-            for label, value, goal, habit in zip(labels, values, goals, habits):
-                habit_data[habit][0].append(label)
-                habit_data[habit][1].append(value)
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
 
-            for habit in unique_habits:
-                ax.plot(
-                    habit_data[habit][0], habit_data[habit][1], marker="o", label=habit
-                )
-
-        else:
-            x = range(len(labels))
-            ax.bar(x, values, label="Study Time", color="#87CEFA", edgecolor="black")
-            if any(goals):
-                ax.bar(
-                    x,
-                    goals,
-                    label="Goals",
-                    color="#C0BEBC",
-                    edgecolor="black",
-                    alpha=0.5,
-                )
-
-            ax.set_xticks(x)
-            ax.set_xticklabels(labels)
-
-            for i, habit in enumerate(habits):
-                ax.text(x[i], values[i], habit, ha="center", va="bottom")
+        for i, label in enumerate(labels):
+            ax.text(x[i], values[i], label, ha="center", va="bottom")
 
         ax.legend(loc="upper right", fontsize=12)
         fig.autofmt_xdate()

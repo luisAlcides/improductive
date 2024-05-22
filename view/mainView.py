@@ -371,44 +371,9 @@ class MainView(QMainWindow):
 
     def setup_tab2(self, tab):
         layout = QVBoxLayout()
-        self.chart_view = ChartViewAll()
-        self.button_layout = QHBoxLayout()
-        btn_monthly = QPushButton("Monthly")
-        btn_weekly = QPushButton("Weekly")
-        btn_yearly = QPushButton("Yearly")
-
-        btn_monthly.clicked.connect(
-            lambda: self.habit_controller.show_monthly_data(self.chart_view)
-        )
-        btn_weekly.clicked.connect(
-            lambda: self.habit_controller.show_weekly_data(self.chart_view)
-        )
-        btn_yearly.clicked.connect(
-            lambda: self.habit_controller.show_yearly_data(self.chart_view)
-        )
-
-        self.button_layout.addWidget(btn_monthly)
-        self.button_layout.addWidget(btn_weekly)
-        self.button_layout.addWidget(btn_yearly)
-
-        self.month_selector = QComboBox()
-        self.month_selector.addItems(
-            ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
-        )
-        self.month_selector.currentTextChanged.connect(
-            lambda: self.show_data_for_selected_month(
-                self.month_selector.currentText(), self.chart_view
-            )
-        )
-        self.button_layout.addWidget(self.month_selector)
-
-        layout.addLayout(self.button_layout)
+        self.chart_view = ChartViewAll(self.habit_controller)
         layout.addWidget(self.chart_view)
-        self.habit_controller.show_monthly_data(self.chart_view)
         tab.setLayout(layout)
-
-    def show_data_for_selected_month(self, month, view):
-        self.habit_controller.show_data_by_month(month, view)
 
     def load_goals(self, table, month):
         self.goals_controller.load_goals(table, month)
@@ -451,6 +416,7 @@ class MainView(QMainWindow):
         self.load_goals(self.table_goal, self.current_month)
         self.table_study_day.setRowCount(0)
         self.study_day.load(self.table_study_day)
+        self.montly_schedule.trigger_data_update()
 
         self.update_chart()
 
