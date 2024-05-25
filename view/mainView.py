@@ -468,12 +468,16 @@ class MainView(QMainWindow):
                     edit_from_table(self.table_goal, self.goals_controller, data)
             elif self.table_study_day.hasFocus():
                 data = data_of_table(self.table_study_day)
-                study_id = edit_from_table(
-                    self.table_study_day, self.study_day_controller, data
-                )
-                self.controller_update_study_day = UpdateStudyDayHabitController(
-                    self.study_day_controller, study_id
-                )
+                if data:
+                    study_id = edit_from_table(
+                        self.table_study_day, self.study_day_controller, data
+                    )
+                    if study_id:
+                        self.controller_update_study_day = (
+                            UpdateStudyDayHabitController(
+                                self.study_day_controller, study_id
+                            )
+                        )
         except Exception as e:
             print(f"Error to update: {e}")
         self.refresh()
@@ -565,10 +569,3 @@ class SystemTrayTimer:
         time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
         self.tray_icon.setToolTip(time_string)
         self.time_action.setText(time_string)
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    main_view = MainView()
-    main_view.show()
-    sys.exit(app.exec())
