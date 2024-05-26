@@ -1,7 +1,7 @@
 import sqlite3
 import datetime
 from connection import Connection
-from utils.func import add_to_table
+from utils.func import add_to_table, message
 
 
 class GoalModel:
@@ -76,6 +76,45 @@ class GoalModel:
 
         return month_id[0]
 
+    def get_category_by_id(self, category_id):
+        try:
+            sql = 'SELECT name FROM category_habits WHERE id = ?'
+            with self.con as cursor:
+                cursor.execute(sql, (category_id,))
+                category = cursor.fetchone()
+                return category[0]
+        except Exception as e:
+            print('Error getting category by id:', e)
+            return None
+    def get_month_by_id(self, month_id):
+        try:
+            sql = 'SELECT name FROM months WHERE id = ?'
+            with self.con as cursor:
+                cursor.execute(sql, (month_id,))
+                month = cursor.fetchone()
+                return month[0]
+        except Exception as e:
+            print('Error getting month by id:', e)
+            return None
+
+    def get_goal_by_id(self, goal_id):
+        try:
+            sql = '''SELECT goal, category_id, month_id FROM goal WHERE id = ?'''
+            with self.con as cursor:
+                cursor.execute(sql, (goal_id,))
+                result = cursor.fetchone()
+                goal = result[0]
+                category_id = result[1]
+                month_id = result[2]
+                
+                category = self.get_category_by_id(category_id)
+                month = self.get_month_by_id(month_id)
+
+                return goal, category, month
+        except Exception as e:
+            print('Error getting goal by id:', e)
+            return None
+
     def get_id_goal(self, data):
         category_id = self.get_id_category(data)
         sql = 'SELECT id FROM goal WHERE category_id = ?'
@@ -138,3 +177,22 @@ class GoalModel:
         except Exception as e:
             print('Error deleting goal:', e)
             self.success = False
+
+
+    def update(self, goal, category, month, goal_id):
+        category_id = self.get_id_category(category)
+        month_id = self.get_id_month(month)
+        values = (goal, category_id, month_id, goal_id)
+
+        try:
+            with self.con as cursor:
+                sql = '''UPDATE goal SET goal = ?, category_id = ?, month_id = ?
+                        WHERE id = ?'''
+                cursor.execute(sql, values)
+                self.success = True
+                message('Update successful.')
+                return True
+        except Exception as e:
+            print('Error updating goal:', e)
+            self.success = False
+

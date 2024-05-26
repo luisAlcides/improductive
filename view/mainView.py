@@ -35,6 +35,7 @@ from controller.addHabitTimeController import AddHabitTimeController
 from controller.studyDataController import StudyDataController
 from controller.updateStudyDayHabitController import UpdateStudyDayHabitController
 from controller.exportImportDatabaseController import ExportImportDatabaseController
+from controller.updateGoalController import UpdateGoalController
 from model.addHabitTimeModel import AddHabitTimeModel
 
 from utils.func import (
@@ -463,9 +464,13 @@ class MainView(QMainWindow):
         try:
             if self.table_goal.hasFocus():
                 data = data_of_table(self.table_goal)
-                message_confirm = message_edit()
-                if message_confirm:
-                    edit_from_table(self.table_goal, self.goals_controller, data)
+                if data:
+                    goal_id = edit_from_table_today(self.table_goal, self.goals_controller, data)
+                    if goal_id:
+                        self.controller_update_goal = UpdateGoalController(
+                            self.goals_controller, goal_id
+                        )
+
             elif self.table_study_day.hasFocus():
                 data = data_of_table(self.table_study_day)
                 if data:

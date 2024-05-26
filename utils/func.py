@@ -39,6 +39,11 @@ def cb_fill_category_habit(cb, controller):
     for category in category_habit:
         cb.addItem(category[0])
 
+def cb_fill_month(cb, controller):
+    cb.clear()
+    months = controller.load_months()
+    for month in months:
+        cb.addItem(month[0])
 
 def add_to_table(table, data):
     row_position = table.rowCount()
@@ -91,7 +96,7 @@ def edit_from_table_today(table, controller, data):
     for row in selected_rows:
         item_name = table.item(row.row(), 0).text()
         if controller is not None:
-            item_id = controller.get_id_study_today(item_name)
+            item_id = controller.get_id_today(item_name)
             return item_id
 
 

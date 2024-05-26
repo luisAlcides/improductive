@@ -17,7 +17,7 @@ class StudyDataController:
     def get_study_time_by_id(self, study_id):
         return self.model.get_study_time_by_id(study_id)
 
-    def get_id_study_today(self, category_habit):
+    def get_id_today(self, category_habit):
         return self.model.get_id_study_today(category_habit)
 
     def get_category_id(self, study):
