@@ -1,6 +1,6 @@
 from controller.habitController import HabitController
 from view.updateStudyDayHabitView import UpdateStudyDayHabitView
-from utils.func import cb_fill_category_habit
+from utils.func import cb_fill_category_habit, message
 from PySide6.QtCore import Qt
 
 
@@ -38,7 +38,7 @@ class UpdateStudyDayHabitController:
             if self.controller.update(study_time, category_id, self.data):
                 self.view.habit_updated.emit()
                 self.view.close()
-                print("Update successful.")
+                message("Update successful.")
             else:
                 print("Error updating study data.")
         except Exception as e:

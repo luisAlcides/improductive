@@ -44,7 +44,7 @@ from utils.func import (
     data_of_table,
     delete_from_table,
     message_edit,
-    edit_from_table,
+    edit_from_table_today,
     cb_fill_category_habit,
 )
 from utils.validation import validate_fields
@@ -469,13 +469,14 @@ class MainView(QMainWindow):
             elif self.table_study_day.hasFocus():
                 data = data_of_table(self.table_study_day)
                 if data:
-                    study_id = edit_from_table(
+                    study_id = edit_from_table_today(
                         self.table_study_day, self.study_day_controller, data
                     )
                     if study_id:
                         self.controller_update_study_day = (
                             UpdateStudyDayHabitController(
                                 self.study_day_controller, study_id
+
                             )
                         )
         except Exception as e:

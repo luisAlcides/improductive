@@ -86,6 +86,14 @@ def edit_from_table(table, controller, data):
             item_id = controller.get_id(item_name)
             return controller.get_data_for_update(item_id)
 
+def edit_from_table_today(table, controller, data):
+    selected_rows = table.selectionModel().selectedRows()
+    for row in selected_rows:
+        item_name = table.item(row.row(), 0).text()
+        if controller is not None:
+            item_id = controller.get_id_study_today(item_name)
+            return item_id
+
 
 def message(message):
     mBox = QMessageBox()
