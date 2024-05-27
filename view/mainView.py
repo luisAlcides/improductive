@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QSystemTrayIcon,
     QProgressBar,
+    QHeaderView
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
@@ -127,6 +128,10 @@ class MainView(QMainWindow):
         """
         )
 
+        self.communicator = Communicator()
+        self.tray_timer = SystemTrayTimer(self)
+        self.communicator.reset_signal.connect(self.reset_timer)
+
         self.create_menu_bar()
 
         self.montly_schedule = MonthlySchedule()
@@ -136,9 +141,7 @@ class MainView(QMainWindow):
         self.create_toolbar()
         cb_fill_category_habit(self.combo_study_of, self.habit_controller)
 
-        self.communicator = Communicator()
-        self.tray_timer = SystemTrayTimer(self)
-        self.communicator.reset_signal.connect(self.reset_timer)
+       
 
         self.timer_stop_watch = QTimer(self)
         self.timer_stop_watch.timeout.connect(self.update_timer_display_for_stopwatch)
@@ -322,6 +325,7 @@ class MainView(QMainWindow):
         self.table_goal = QTableWidget()
         self.table_goal.setColumnCount(3)
         self.table_goal.setHorizontalHeaderLabels(["Habit", "Goal", "Month"])
+        self.table_goal.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
 
         self.current_month = datetime.datetime.now().strftime("%B")
         self.load_goals(self.table_goal, self.current_month)
@@ -337,6 +341,7 @@ class MainView(QMainWindow):
         self.table_study_day = QTableWidget()
         self.table_study_day.setColumnCount(3)
         self.table_study_day.setHorizontalHeaderLabels(["Habit", "Time", "Date"])
+        self.table_study_day.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.study_day.load(self.table_study_day)
         self.table_study_day.setFocusPolicy(Qt.StrongFocus)
 
@@ -349,6 +354,7 @@ class MainView(QMainWindow):
         tab.setLayout(layout)
 
         self.update_chart()
+        self.reset_timer()
 
     def setup_tab2(self, tab):
         layout = QVBoxLayout()
@@ -575,10 +581,12 @@ class MainView(QMainWindow):
 
     def save_study_time_for_stop_watch(self):
         name_habit = self.combo_study_of.currentText()
-        hours, minutes, seconds = map(int, self.input_minutes_study.text().strip().split(':')) 
+        from_input = self.input_minutes_study.text().strip().split(':')
+        hours, minutes, seconds = map(int, from_input) 
         study_time = hours * 60 + minutes + seconds / 60
         model = AddHabitTimeModel(name_habit, study_time)
         self.study_day.add_habit(model)
+        self.refresh()
 
     def play_sound(self):
         self.player.setSource(QUrl.fromLocalFile(sound_path))
