@@ -93,6 +93,8 @@ class MainView(QMainWindow):
         self.stop_watch = False
         self.elapsed_time = 0
 
+        self.toggle_time_stopwatch = False
+
         self.setWindowTitle("ImProductive")
         self.setGeometry(100, 100, 800, 600)
 
@@ -137,8 +139,8 @@ class MainView(QMainWindow):
         self.montly_schedule = MonthlySchedule()
         self.chart_view = ChartViewAll(self.habit_controller)
 
-        self.create_tabs()
         self.create_toolbar()
+        self.create_tabs()
         cb_fill_category_habit(self.combo_study_of, self.habit_controller)
 
        
@@ -146,6 +148,9 @@ class MainView(QMainWindow):
         self.timer_stop_watch = QTimer(self)
         self.timer_stop_watch.timeout.connect(self.update_timer_display_for_stopwatch)
         self.update_current_time()
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_timer_display)
 
         self.chart_view.update_chart()
 
@@ -210,10 +215,10 @@ class MainView(QMainWindow):
         add_habit_action = QAction(QIcon(ico_habit_path), "Add Habit", self)
         delete_action = QAction(QIcon(ico_delete_path), "Delete", self)
         update_action = QAction(QIcon(ico_update_path), "Update", self)
-        toggle_timer_action = QAction(
+        self.toggle_timer_action = QAction(
             QIcon(ico_toggle_timer_path), "StopWatch", self
         )
-        timer_action = QAction(QIcon(ico_timer_path), "Timer", self)
+        self.timer_action = QAction(QIcon(ico_timer_path), "Timer", self)
         clear_action = QAction(QIcon(ico_clear_path), "Clear", self)
 
 
@@ -221,8 +226,8 @@ class MainView(QMainWindow):
         add_goal_action.triggered.connect(self.add_goal)
         delete_action.triggered.connect(self.delete)
         update_action.triggered.connect(self.update)
-        toggle_timer_action.triggered.connect(self.toggle_timer_manual)
-        timer_action.triggered.connect(self.timer_goal)
+        self.toggle_timer_action.triggered.connect(self.toggle_timer_manual)
+        self.timer_action.triggered.connect(self.timer_goal)
         clear_action.triggered.connect(self.clear_timer_stopwatch)
 
         toolbar.addActions(
@@ -231,32 +236,13 @@ class MainView(QMainWindow):
                 add_goal_action,
                 delete_action,
                 update_action,
-                toggle_timer_action,
-                timer_action,
+                self.toggle_timer_action,
+                self.timer_action,
                 clear_action,
             ]
         )
 
-    def timer_goal(self):
-        try:
-            self.controller_timer = TimerGoalController(self.combo_study_of.currentText())
-            self.required_study_time = self.controller_timer.get_goal()
-            self.set_study_time(self.required_study_time)
-        except ValueError:
-            self.required_study_time = 0
-
-    def set_study_time(self, study_time):
-        total_seconds = int(float(study_time) * 3600)  # Convert hours to seconds
-        self.remaining_time = total_seconds
-        hours, remainder = divmod(total_seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        self.input_minutes_study.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
-
-    def clear_timer_stopwatch(self):
-        self.combo_study_of.setCurrentIndex(-1)
-        self.input_minutes_study.clear()
-        self.stop_watch = False
-
+    
     def setup_tab1(self, tab):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignHCenter)
@@ -287,9 +273,20 @@ class MainView(QMainWindow):
         self.btn_pause_timer = self.create_timer_button(
             ico_pause_timer_path, "Pause Timer", self.pause_timer, ly_ht_btn_timer
         )
-        self.btn_stop_timer = self.create_timer_button(
-            ico_stop_timer_path, "Stop Timer", self.stop_timer, ly_ht_btn_timer
-        )
+
+        if not self.toggle_time_stopwatch:
+            self.toggle_timer_action.setEnabled(False)
+            self.timer_action.setEnabled(True)
+            self.btn_stop_timer = self.create_timer_button(
+                ico_stop_timer_path, "Stop Timer", self.stop_timer, ly_ht_btn_timer
+                )
+        else:
+            self.toggle_timer_action.setEnabled(True)
+            self.timer_action.setEnabled(False)
+            self.btn_stop_timer = self.create_timer_button(
+                ico_stop_timer_path, "Stop Timer", self.stop_watch, ly_ht_btn_timer
+            )
+
 
         ly_vt_table.addLayout(ly_ht_time)
 
@@ -387,6 +384,34 @@ class MainView(QMainWindow):
                 self.controller_ei_database.importDatabase(source_path)
         except Exception as e:
             print(f"Error to import database: {e}")
+# Timers
+    def timer_goal(self):
+        try:
+            self.toggle_time_stopwatch = False
+            self.timer = True
+
+            self.input_minutes_study.setReadOnly(self.timer)
+            self.btn_start_timer.setEnabled(self.timer)
+            self.btn_stop_timer.setEnabled(self.timer)
+            self.btn_pause_timer.setEnabled(self.timer)
+        
+            self.controller_timer = TimerGoalController(self.combo_study_of.currentText())
+            self.required_study_time = self.controller_timer.get_goal()
+            self.set_study_time(self.required_study_time)
+        except ValueError:
+            self.required_study_time = 0
+
+    def set_study_time(self, study_time):
+        total_seconds = int(float(study_time) * 3600)  # Convert hours to seconds
+        self.remaining_time = total_seconds
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        self.input_minutes_study.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
+
+    def clear_timer_stopwatch(self):
+        self.combo_study_of.setCurrentIndex(-1)
+        self.input_minutes_study.clear()
+        self.stop_watch = False
 
     def start_timer(self):
         self.timer_stop_watch.start(1000)
@@ -394,18 +419,26 @@ class MainView(QMainWindow):
         self.btn_pause_timer.setEnabled(True)
         self.btn_stop_timer.setEnabled(True)
 
+
     def pause_timer(self):
         self.timer_stop_watch.stop()
         self.btn_start_timer.setEnabled(True)
         self.btn_pause_timer.setEnabled(False)
         self.btn_stop_timer.setEnabled(True)
 
-    def stop_timer(self):
+    def stop_watch(self):
         self.timer_stop_watch.stop()
         self.save_study_time_for_stop_watch()  # Save study time to the database
-        self.play_sound()  # Play completion sound
         self.reset_timer()  # Reset timer after stopping
         self.clear_timer_stopwatch()
+
+    def stop_timer(self):
+        self.timer.stop()
+        self.save_study_time_for_timer()
+        self.play_sound()
+        self.reset_timer()
+        self.clear_timer_stopwatch()
+
 
     def reset_timer(self):
         self.elapsed_time = 0
@@ -415,6 +448,9 @@ class MainView(QMainWindow):
         self.btn_pause_timer.setEnabled(False)
         self.btn_stop_timer.setEnabled(False)
         self.input_minutes_study.setReadOnly(False)
+        self.stop_watch = False
+        self.timer = False
+        self.refresh()
 
     def update_timer_display_for_stopwatch(self):
         self.elapsed_time += 1
@@ -424,12 +460,36 @@ class MainView(QMainWindow):
         self.input_minutes_study.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
         self.tray_timer.update_display(self.elapsed_time)
 
+    def update_timer_display(self):
+        self.remaining_time -= 1
+        hours = self.remaining_time // 3600
+        minutes = (self.remaining_time % 3600) // 60
+        seconds = self.remaining_time % 60
+        self.input_minutes_study.setText(f"{hours:02}:{minutes:02}:{seconds:02}")
+        self.tray_timer.update_display(self.remaining_time)
+
     def toggle_timer_manual(self):
+        self.toggle_time_stopwatch = True
         self.stop_watch = True
         self.input_minutes_study.setReadOnly(self.stop_watch)
         self.btn_start_timer.setEnabled(self.stop_watch)
         self.btn_stop_timer.setEnabled(self.stop_watch)
         self.btn_pause_timer.setEnabled(self.stop_watch)
+
+    def save_study_time_for_stop_watch(self):
+        name_habit = self.combo_study_of.currentText()
+        from_input = self.input_minutes_study.text().strip().split(':')
+        hours, minutes, seconds = map(int, from_input) 
+        study_time = hours * 60 + minutes + seconds / 60
+        model = AddHabitTimeModel(name_habit, study_time)
+        self.study_day.add_habit(model)
+        self.refresh()
+
+    def play_sound(self):
+        self.player.setSource(QUrl.fromLocalFile(sound_path))
+        self.player.play()
+
+
 
     def add_habit_category(self):
         self.add_habit_view = AddHabitView()
@@ -578,19 +638,6 @@ class MainView(QMainWindow):
     def clear_fields(self):
         self.input_minutes_study.clear()
         self.combo_study_of.setCurrentIndex(0)
-
-    def save_study_time_for_stop_watch(self):
-        name_habit = self.combo_study_of.currentText()
-        from_input = self.input_minutes_study.text().strip().split(':')
-        hours, minutes, seconds = map(int, from_input) 
-        study_time = hours * 60 + minutes + seconds / 60
-        model = AddHabitTimeModel(name_habit, study_time)
-        self.study_day.add_habit(model)
-        self.refresh()
-
-    def play_sound(self):
-        self.player.setSource(QUrl.fromLocalFile(sound_path))
-        self.player.play()
 
 class SystemTrayTimer:
     def __init__(self, main_view):
