@@ -9,7 +9,7 @@ class StudyDataController:
         return self.model.get_study_data(time_period)
 
     def get_id(self, study):
-        return self.model.get_id_study(study)
+        return self.model.get_id_study_today(study)
 
     def delete(self, study_id):
         return self.model.delete(study_id)

@@ -164,13 +164,17 @@ class MonthlySchedule(QWidget):
             item.setForeground(QColor("#000"))  # Black text for dark mode
         
         if self.is_sunday(day):
-            item.setForeground(QColor("#FF0000"))  # Red text for Sundays
+            item.setBackground(QColor("#e5e5e5"))  # Light Pink for Sundays
+            item.setForeground(QColor("#000000"))  # Black text for Sundays
 
     def is_sunday(self, day):
         current_month = self.combo_month.currentIndex() + 1
         current_year = datetime.datetime.now().year
-        date = datetime.date(current_year, current_month, day)
-        return date.weekday() == 6  # 6 corresponds to Sunday
+        try:
+            date = datetime.date(current_year, current_month, day)
+            return date.weekday() == 6  # 6 corresponds to Sunday
+        except ValueError:
+            return False
 
     def get_month_data_from_db(self, month):
         month_num = self.combo_month.findText(month) + 1
