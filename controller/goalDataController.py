@@ -18,6 +18,9 @@ class GoalDataController:
     def get_goal_by_id(self, goal_id):
         return self.model.get_goal_by_id(goal_id)
 
+    def get_goal_by_category(self, category):
+        return self.model.get_goal_by_category(category)
+
     def get_id_today(self, data):
         return self.get_id(data)
 

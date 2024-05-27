@@ -1,3 +1,4 @@
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -134,21 +135,20 @@ class MonthlySchedule(QWidget):
             self.table_widget.setItem(row, 0, QTableWidgetItem(activity))
             total_study_time = 0
             for day in range(1, 32):
+                item = QTableWidgetItem()
                 if day in month_data[activity]:
                     value = month_data[activity][day]
                     total_study_time += value
-                    item = QTableWidgetItem(str(value))
-                    self.set_item_style(item, value)
-                    self.table_widget.setItem(row, day, item)
+                    item.setText(str(value))
+                    self.set_item_style(item, value, day)
                 else:
-                    item = QTableWidgetItem("")
-                    self.set_item_style(item, None)
-                    self.table_widget.setItem(row, day, item)
+                    self.set_item_style(item, None, day)
+                self.table_widget.setItem(row, day, item)
             total_study_time_per_habit[activity] = total_study_time
 
         return total_study_time_per_habit
 
-    def set_item_style(self, item, value):
+    def set_item_style(self, item, value, day):
         if value is not None:
             value = float(value)
             if value < 1:
@@ -160,8 +160,17 @@ class MonthlySchedule(QWidget):
             item.setTextAlignment(Qt.AlignCenter)
             item.setForeground(QColor("#000"))  # Black text for dark mode
         else:
-            item.setBackground(QColor("#aaa"))  # Light Blue
+            item.setBackground(QColor("#fff"))  # White
             item.setForeground(QColor("#000"))  # Black text for dark mode
+        
+        if self.is_sunday(day):
+            item.setForeground(QColor("#FF0000"))  # Red text for Sundays
+
+    def is_sunday(self, day):
+        current_month = self.combo_month.currentIndex() + 1
+        current_year = datetime.datetime.now().year
+        date = datetime.date(current_year, current_month, day)
+        return date.weekday() == 6  # 6 corresponds to Sunday
 
     def get_month_data_from_db(self, month):
         month_num = self.combo_month.findText(month) + 1

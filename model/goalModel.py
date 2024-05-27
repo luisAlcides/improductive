@@ -115,6 +115,25 @@ class GoalModel:
             print('Error getting goal by id:', e)
             return None
 
+    def get_goal_by_category(self, category):
+        try:
+            category_id = self.get_id_category(category)
+            month = datetime.datetime.now().month
+            year = datetime.datetime.now().year
+            print('month:', month)
+            sql = 'SELECT goal FROM goal WHERE category_id = ? AND month_id = ?'
+            with self.con as cursor:
+                cursor.execute(sql, (category_id, month,))
+                goal = cursor.fetchone()
+                goal = goal[0]
+            div = self.day_month(month, year)
+            result = float(goal)/div
+            return result
+        except Exception as e:
+            print('Error getting goal by category:', e)
+            return None
+
+
     def get_id_goal(self, data):
         category_id = self.get_id_category(data)
         sql = 'SELECT id FROM goal WHERE category_id = ?'
