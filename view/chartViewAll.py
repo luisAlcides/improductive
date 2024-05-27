@@ -248,7 +248,7 @@ class ChartViewAll(QWidget):
             for i, label in enumerate(labels):
                 ax.text(i, values[i], values[i], ha="center", va="bottom")
 
-        ax.yaxis.grid(True, linestyle="--", alpha=0.6)
+        ax.yaxis.grid(True, linestyle=" ", alpha=0.6)
         ax.xaxis.grid(False)
         ax.legend(
             handles=[
