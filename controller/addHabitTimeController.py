@@ -64,6 +64,7 @@ class AddHabitTimeController:
                 habits = cursor.fetchall()
                 data = []
                 for habit_name, study_time, date_current in habits:
+                    float(study_time)
                     format_study_time = "{:.2f}".format(study_time)
                     data.append((habit_name, format_study_time, date_current))
                 for habit in data:

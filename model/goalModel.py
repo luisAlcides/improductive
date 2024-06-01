@@ -12,7 +12,7 @@ class GoalModel:
     def add_goal(self, goal, category, month):
         category_id, month_id = self.get_ids(category, month)
         current_time = datetime.datetime.now().strftime('%d-%m-%y')
-        values = (goal, category_id, month_id, current_time)
+        values = (float(goal), category_id, month_id, current_time)
 
         try:
             with self.con as cursor:
@@ -106,7 +106,7 @@ class GoalModel:
                 goal = result[0]
                 category_id = result[1]
                 month_id = result[2]
-                
+
                 category = self.get_category_by_id(category_id)
                 month = self.get_month_by_id(month_id)
 
@@ -120,7 +120,6 @@ class GoalModel:
             category_id = self.get_id_category(category)
             month = datetime.datetime.now().month
             year = datetime.datetime.now().year
-            print('month:', month)
             sql = 'SELECT goal FROM goal WHERE category_id = ? AND month_id = ?'
             with self.con as cursor:
                 cursor.execute(sql, (category_id, month,))
@@ -128,6 +127,7 @@ class GoalModel:
                 goal = goal[0]
             div = self.day_month(month, year)
             result = float(goal)/div
+            result = float(result)
             return result
         except Exception as e:
             print('Error getting goal by category:', e)
@@ -162,8 +162,9 @@ class GoalModel:
                 res = cursor.fetchall()
                 data = []
                 for habit, goal, month, year in res:
-                    div = self.day_month(month, year)
+                    div = self.day_month(month_id, year)
                     goal_calc = float(goal)/div
+                    float(goal_calc)
                     format_goal = "{:.2f}".format(goal_calc)
                     data.append((habit, format_goal, month))
 

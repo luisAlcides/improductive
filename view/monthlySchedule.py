@@ -1,4 +1,3 @@
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -162,7 +161,7 @@ class MonthlySchedule(QWidget):
         else:
             item.setBackground(QColor("#fff"))  # White
             item.setForeground(QColor("#000"))  # Black text for dark mode
-        
+
         if self.is_sunday(day):
             item.setBackground(QColor("#e5e5e5"))  # Light Pink for Sundays
             item.setForeground(QColor("#000000"))  # Black text for Sundays
