@@ -146,19 +146,14 @@ class MainView(QMainWindow):
         self.countdown_timer = QTimer(self)
         self.countdown_timer.timeout.connect(self.update_countdown_display)
 
-
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
 
         self.create_tabs()
 
-
-
-
         self.update_current_time()
         self.chart_view.update_chart()
-
 
     def create_connections(self):
         self.habit_added.connect(self.chart_view.update_habit_selector)
@@ -268,7 +263,7 @@ class MainView(QMainWindow):
         self.update_current_time()
 
         self.btn_start_stopwatch = self.create_timer_button(
-            ico_start_timer_path, "Start Stopwatch",ly_ht_btn_timer
+            ico_start_timer_path, "Start Stopwatch", ly_ht_btn_timer
         )
         self.btn_pause_stopwatch = self.create_timer_button(
             ico_pause_timer_path, "Pause Stopwatch", ly_ht_btn_timer
@@ -276,7 +271,6 @@ class MainView(QMainWindow):
         self.btn_stop_stopwatch = self.create_timer_button(
             ico_stop_timer_path, "Stop Stopwatch", ly_ht_btn_timer
         )
-
 
         ly_vt_table.addLayout(ly_ht_time)
 
@@ -405,10 +399,8 @@ class MainView(QMainWindow):
     def start_countdown(self):
         self.countdown_timer.start(1000)
 
-
     def pause_countdown(self):
         self.countdown_timer.stop()
-
 
     def stop_countdown(self):
         self.countdown_timer.stop()
@@ -487,9 +479,14 @@ class MainView(QMainWindow):
     def clear_timer_stopwatch(self):
         self.combo_study_of.setCurrentIndex(-1)
         self.input_minutes_study.clear()
+        self.elapsed_time = 0
         self.stop_watch = True
         self.toggle_timer_action.setEnabled(True)
         self.timer_action.setEnabled(True)
+        self.timer_active = False
+        self.btn_start_stopwatch.setEnabled(False)
+        self.btn_stop_stopwatch.setEnabled(False)
+        self.btn_pause_stopwatch.setEnabled(False)
 
     def reset_timer(self):
         self.elapsed_time = 0
@@ -502,7 +499,6 @@ class MainView(QMainWindow):
         self.input_minutes_study.setReadOnly(False)
         self.stop_watch = False
         self.timer_active = False
-        self.refresh()
 
     def play_sound(self):
         self.player.setSource(QUrl.fromLocalFile(sound_path))
@@ -550,12 +546,8 @@ class MainView(QMainWindow):
 
     def refresh(self):
         cb_fill_category_habit(self.combo_study_of, self.habit_controller)
-        self.table_goal.setRowCount(0)
-        self.load_goals(self.table_goal, self.current_month)
-        self.table_study_day.setRowCount(0)
-        self.study_day.load(self.table_study_day)
+        self.update_tables()
         self.montly_schedule.trigger_data_update()
-
         self.update_chart()
         self.chart_view.update_chart()
 
@@ -569,6 +561,12 @@ class MainView(QMainWindow):
             self.chart_view_goal.setup_chart(
                 self.table_goal_data, self.table_study_day_data
             )
+
+    def update_tables(self):
+        self.table_goal.setRowCount(0)
+        self.load_goals(self.table_goal, self.current_month)
+        self.table_study_day.setRowCount(0)
+        self.study_day.load(self.table_study_day)
 
     def delete(self):
         try:
@@ -656,6 +654,65 @@ class MainView(QMainWindow):
         self.combo_study_of.setCurrentIndex(0)
 
 class SystemTrayTimer:
+    def __init__(self, main_view):
+        self.main_view = main_view
+        self.app = QApplication.instance() or QApplication(sys.argv)
+
+        self.tray_icon = QSystemTrayIcon()
+        self.set_tray_icon(ico_toggle_timer_path)
+
+        self.tray_menu = QMenu()
+        self.time_action = QAction("00:00:00")
+        self.tray_menu.addAction(self.time_action)
+
+        self.start_stopwatch_action = QAction("Start Stopwatch", self.main_view)
+        self.start_stopwatch_action.triggered.connect(self.main_view.start_stopwatch)
+        self.tray_menu.addAction(self.start_stopwatch_action)
+
+        self.pause_stopwatch_action = QAction("Pause Stopwatch", self.main_view)
+        self.pause_stopwatch_action.triggered.connect(self.main_view.pause_stopwatch)
+        self.tray_menu.addAction(self.pause_stopwatch_action)
+
+        self.start_timer_action = QAction("Start Timer", self.main_view)
+        self.start_timer_action.triggered.connect(self.main_view.start_countdown)
+        self.tray_menu.addAction(self.start_timer_action)
+
+        self.pause_timer_action = QAction("Pause Timer", self.main_view)
+        self.pause_timer_action.triggered.connect(self.main_view.pause_countdown)
+        self.tray_menu.addAction(self.pause_timer_action)
+
+        self.reset_action = QAction("Reset", self.main_view)
+        self.reset_action.triggered.connect(self.reset)
+        self.tray_menu.addAction(self.reset_action)
+
+        self.exit_action = QAction("Exit", self.app)
+        self.exit_action.triggered.connect(self.app.quit)
+        self.tray_menu.addAction(self.exit_action)
+
+        self.tray_icon.setContextMenu(self.tray_menu)
+        self.tray_icon.show()
+
+    def reset(self):
+        self.main_view.reset_timer()
+        self.time_action.setText("00:00:00")
+
+    def set_tray_icon(self, icon_path):
+        pixmap = QPixmap(icon_path)
+        scaled_pixmap = pixmap.scaled(
+            64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+        icon = QIcon(scaled_pixmap)
+        self.tray_icon.setIcon(icon)
+
+    def update_display(self, elapsed_time):
+        hours = elapsed_time // 3600
+        minutes = (elapsed_time % 3600) // 60
+        seconds = elapsed_time % 60
+        time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
+        self.tray_icon.setToolTip(time_string)
+        self.time_action.setText(time_string)
+
+
     def __init__(self, main_view):
         self.main_view = main_view
         self.app = QApplication.instance() or QApplication(sys.argv)
