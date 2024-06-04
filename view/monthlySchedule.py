@@ -72,7 +72,7 @@ class MonthlySchedule(QWidget):
         )
         self.totals_layout.addWidget(self.total_month_table)
 
-        self.overall_total_label = QLabel("Overall Total Study Time:")
+        self.overall_total_label = QLabel("Overall Total Study Time")
         self.overall_total_label.setStyleSheet("font-weight: bold;")
         self.totals_layout.addWidget(self.overall_total_label)
 
@@ -138,12 +138,12 @@ class MonthlySchedule(QWidget):
                 if day in month_data[activity]:
                     value = month_data[activity][day]
                     total_study_time += value
-                    item.setText(str(value))
+                    item.setText(f"{value:.2f}")
                     self.set_item_style(item, value, day)
                 else:
                     self.set_item_style(item, None, day)
                 self.table_widget.setItem(row, day, item)
-            total_study_time_per_habit[activity] = total_study_time
+            total_study_time_per_habit[activity] = round(total_study_time, 2)
 
         return total_study_time_per_habit
 
@@ -224,11 +224,13 @@ class MonthlySchedule(QWidget):
             row_position = self.total_month_table.rowCount()
             self.total_month_table.insertRow(row_position)
             self.total_month_table.setItem(row_position, 0, QTableWidgetItem(habit))
-            self.total_month_table.setItem(row_position, 1, QTableWidgetItem(str(time)))
+            self.total_month_table.setItem(
+                row_position, 1, QTableWidgetItem(f"{time:.2f}")
+            )
             self.colorize_total_row(self.total_month_table, row_position, time)
 
         self.total_month_label.setText(
-            f"Total Study Time for {month}: {sum(total_study_time_per_habit.values())} hours"
+            f"Total Study Time for {month}: {sum(total_study_time_per_habit.values()):.2f} hours"
         )
 
     def display_overall_totals(self):
@@ -242,7 +244,7 @@ class MonthlySchedule(QWidget):
             self.overall_total_table.insertRow(row_position)
             self.overall_total_table.setItem(row_position, 0, QTableWidgetItem(habit))
             self.overall_total_table.setItem(
-                row_position, 1, QTableWidgetItem(str(time))
+                row_position, 1, QTableWidgetItem(f"{time:.2f}")
             )
             self.colorize_total_row_overall(
                 self.overall_total_table, row_position, time

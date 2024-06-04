@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QWidget
 
-from view.mainView import MainView  # Assuming this remains the same
+from view.mainView import MainView
 
 
 stylesheet = """
@@ -49,7 +49,7 @@ QPushButton::menu-indicator {
 
 
 path = os.path.dirname(os.path.abspath(__file__))
-icon_path = os.path.join(path, "icons", "system.png")
+icon_path = os.path.join(path, "view/icons", "system.png")
 
 
 class ImProductive(QWidget):

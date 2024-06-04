@@ -674,6 +674,18 @@ class MainView(QMainWindow):
         button.setToolTip(tooltip)
         button.setStyleSheet("QPushButton {background-color: none; border: none;}")
         button.clicked.connect(callback)
+        button.setStyleSheet(
+            """
+                QPushButton {
+                    background-color: none;
+                    border: none;
+                }
+                QPushButton:hover {
+                    background-color: #dcdcdc; /* Cambia a un color de fondo ligeramente gris */
+                    border: 1px solid #c0c0c0; /* Borde ligero similar a un QAction */
+                }
+            """
+        )
         layout.addWidget(button)
         return button
 

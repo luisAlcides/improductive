@@ -1,6 +1,6 @@
-<!DOCTYPE RCC>
-<RCC version="1.0">
-    <qresource>
-        <file>view/icons/system.png</file>
-    </qresource>
+
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+    <file>view/icons/system.png</file>
+</qresource>
 </RCC>
