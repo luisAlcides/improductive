@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QSystemTrayIcon,
     QProgressBar,
-    QHeaderView
+    QHeaderView,
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 
@@ -71,10 +71,12 @@ ico_timer_path = os.path.join(script_directory, "icons", "timer.png")
 ico_clear_path = os.path.join(script_directory, "icons", "clear.png")
 
 # Sound path
-sound_path = os.path.join(script_directory, "sounds", "complete.wav")
+sound_path = os.path.join(script_directory, "sounds", "sound_timer.mp3")
+
 
 class Communicator(QObject):
     reset_signal = Signal()
+
 
 class MainView(QMainWindow):
     habit_added = Signal()
@@ -82,6 +84,15 @@ class MainView(QMainWindow):
     habit_time = Signal()
     montly_schedule_signal = Signal()
     add_habit_category_signal = Signal()
+
+    signals_connected = {
+        "start_stopwatch": False,
+        "pause_stopwatch": False,
+        "stop_stopwatch": False,
+        "start_countdown": False,
+        "pause_countdown": False,
+        "stop_countdown": False,
+    }
 
     def __init__(self):
         super().__init__()
@@ -324,7 +335,9 @@ class MainView(QMainWindow):
         self.table_study_day = QTableWidget()
         self.table_study_day.setColumnCount(3)
         self.table_study_day.setHorizontalHeaderLabels(["Habit", "Time", "Date"])
-        self.table_study_day.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table_study_day.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.Stretch
+        )
         self.study_day.load(self.table_study_day)
         self.table_study_day.setFocusPolicy(Qt.StrongFocus)
 
@@ -373,6 +386,26 @@ class MainView(QMainWindow):
             print(f"Error to import database: {e}")
 
     # Timer Goal Functions
+    def disconnect_signals_btn(self):
+        if self.signals_connected["start_stopwatch"]:
+            self.btn_start_stopwatch.clicked.disconnect()
+            self.signals_connected["start_stopwatch"] = False
+        if self.signals_connected["pause_stopwatch"]:
+            self.btn_pause_stopwatch.clicked.disconnect()
+            self.signals_connected["pause_stopwatch"] = False
+        if self.signals_connected["stop_stopwatch"]:
+            self.btn_stop_stopwatch.clicked.disconnect()
+            self.signals_connected["stop_stopwatch"] = False
+        if self.signals_connected["start_countdown"]:
+            self.btn_start_stopwatch.clicked.disconnect()
+            self.signals_connected["start_countdown"] = False
+        if self.signals_connected["pause_countdown"]:
+            self.btn_pause_stopwatch.clicked.disconnect()
+            self.signals_connected["pause_countdown"] = False
+        if self.signals_connected["stop_countdown"]:
+            self.btn_stop_stopwatch.clicked.disconnect()
+            self.signals_connected["stop_countdown"] = False
+
     def set_timer_goal(self):
         self.toggle_time_stopwatch = False
         self.timer_active = True
@@ -384,8 +417,11 @@ class MainView(QMainWindow):
         self.btn_pause_stopwatch.setEnabled(self.timer_active)
 
         self.btn_start_stopwatch.clicked.connect(self.start_countdown)
+        self.signals_connected["start_countdown"] = True
         self.btn_pause_stopwatch.clicked.connect(self.pause_countdown)
+        self.signals_connected["pause_countdown"] = True
         self.btn_stop_stopwatch.clicked.connect(self.stop_countdown)
+        self.signals_connected["stop_countdown"] = True
 
         self.controller_timer = TimerGoalController(self.combo_study_of.currentText())
         self.required_study_time = self.controller_timer.get_goal()
@@ -408,6 +444,7 @@ class MainView(QMainWindow):
         self.play_sound()
         self.reset_timer()
         self.clear_timer_stopwatch()
+        self.refresh()
 
     def update_countdown_display(self):
         self.remaining_time = self.remaining_time.addSecs(-1)
@@ -417,14 +454,17 @@ class MainView(QMainWindow):
 
     def update_timer_display(self):
         self.input_minutes_study.setText(self.remaining_time.toString("hh:mm:ss"))
-        self.tray_timer.update_display(self.remaining_time.hour() * 3600 + self.remaining_time.minute() * 60 + self.remaining_time.second())
+        self.tray_timer.update_display(
+            self.remaining_time.hour() * 3600
+            + self.remaining_time.minute() * 60
+            + self.remaining_time.second()
+        )
 
     def save_study_time_for_timer(self):
         name_habit = self.combo_study_of.currentText()
         from_input = self.required_study_time * 60
         model = AddHabitTimeModel(name_habit, from_input)
         self.study_day.add_habit(model)
-        self.refresh()
         self.clear_timer_stopwatch()
 
     # Stopwatch Functions
@@ -436,10 +476,12 @@ class MainView(QMainWindow):
         self.btn_start_stopwatch.setEnabled(self.stop_watch)
         self.btn_stop_stopwatch.setEnabled(self.stop_watch)
         self.btn_pause_stopwatch.setEnabled(self.stop_watch)
-
         self.btn_start_stopwatch.clicked.connect(self.start_stopwatch)
+        self.signals_connected["start_stopwatch"] = True
         self.btn_pause_stopwatch.clicked.connect(self.pause_stopwatch)
+        self.signals_connected["pause_stopwatch"] = True
         self.btn_stop_stopwatch.clicked.connect(self.stop_stopwatch)
+        self.signals_connected["stop_stopwatch"] = True
 
     def start_stopwatch(self):
         self.stopwatch_timer.start(1000)
@@ -457,7 +499,9 @@ class MainView(QMainWindow):
         self.stopwatch_timer.stop()
         self.save_study_time_for_stopwatch()
         self.reset_timer()
+        self.play_sound()
         self.clear_timer_stopwatch()
+        self.refresh()
 
     def update_stopwatch_display(self):
         self.elapsed_time += 1
@@ -469,24 +513,26 @@ class MainView(QMainWindow):
 
     def save_study_time_for_stopwatch(self):
         name_habit = self.combo_study_of.currentText()
-        from_input = self.input_minutes_study.text().strip().split(':')
+        from_input = self.input_minutes_study.text().strip().split(":")
         hours, minutes, seconds = map(int, from_input)
         study_time = hours * 60 + minutes + seconds / 60
         model = AddHabitTimeModel(name_habit, study_time)
         self.study_day.add_habit(model)
-        self.refresh()
+        self.clear_timer_stopwatch()
 
     def clear_timer_stopwatch(self):
         self.combo_study_of.setCurrentIndex(-1)
         self.input_minutes_study.clear()
         self.elapsed_time = 0
-        self.stop_watch = True
+        self.stop_watch = False
+        self.toggle_time_stopwatch = False
         self.toggle_timer_action.setEnabled(True)
         self.timer_action.setEnabled(True)
         self.timer_active = False
         self.btn_start_stopwatch.setEnabled(False)
         self.btn_stop_stopwatch.setEnabled(False)
         self.btn_pause_stopwatch.setEnabled(False)
+        self.disconnect_signals_btn()
 
     def reset_timer(self):
         self.elapsed_time = 0
@@ -499,6 +545,8 @@ class MainView(QMainWindow):
         self.input_minutes_study.setReadOnly(False)
         self.stop_watch = False
         self.timer_active = False
+        self.clear_timer_stopwatch()
+        self.refresh()
 
     def play_sound(self):
         self.player.setSource(QUrl.fromLocalFile(sound_path))
@@ -591,7 +639,9 @@ class MainView(QMainWindow):
             if self.table_goal.hasFocus():
                 data = data_of_table(self.table_goal)
                 if data:
-                    goal_id = edit_from_table_today(self.table_goal, self.goals_controller, data)
+                    goal_id = edit_from_table_today(
+                        self.table_goal, self.goals_controller, data
+                    )
                     if goal_id:
                         self.controller_update_goal = UpdateGoalController(
                             self.goals_controller, goal_id
@@ -653,6 +703,7 @@ class MainView(QMainWindow):
         self.input_minutes_study.clear()
         self.combo_study_of.setCurrentIndex(0)
 
+
 class SystemTrayTimer:
     def __init__(self, main_view):
         self.main_view = main_view
@@ -712,7 +763,6 @@ class SystemTrayTimer:
         self.tray_icon.setToolTip(time_string)
         self.time_action.setText(time_string)
 
-
     def __init__(self, main_view):
         self.main_view = main_view
         self.app = QApplication.instance() or QApplication(sys.argv)
@@ -770,5 +820,3 @@ class SystemTrayTimer:
         time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
         self.tray_icon.setToolTip(time_string)
         self.time_action.setText(time_string)
-
-
