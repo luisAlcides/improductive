@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QFileDialog,
     QMenu,
-    QSystemTrayIcon,
     QProgressBar,
     QHeaderView,
 )
@@ -143,7 +142,6 @@ class MainView(QMainWindow):
         )
 
         self.communicator = Communicator()
-        self.tray_timer = SystemTrayTimer(self)
         self.communicator.reset_signal.connect(self.reset_timer)
 
         self.create_menu_bar()
@@ -463,11 +461,7 @@ class MainView(QMainWindow):
     def update_timer_display(self):
         self.input_minutes_study.setText(
             self.remaining_time.toString("hh:mm:ss"))
-        self.tray_timer.update_display(
-            self.remaining_time.hour() * 3600
-            + self.remaining_time.minute() * 60
-            + self.remaining_time.second()
-        )
+
 
     def save_study_time_for_timer(self):
         try:
@@ -527,7 +521,6 @@ class MainView(QMainWindow):
         seconds = self.elapsed_time % 60
         self.input_minutes_study.setText(
             f"{hours:02}:{minutes:02}:{seconds:02}")
-        self.tray_timer.update_display(self.elapsed_time)
 
     def save_study_time_for_stopwatch(self):
         try:
@@ -560,7 +553,6 @@ class MainView(QMainWindow):
         self.elapsed_time = 0
         self.remaining_time = QTime(0, 0, 0)
         self.set_study_time(self.required_study_time)
-        self.tray_timer.update_display(self.elapsed_time)
         self.btn_start_stopwatch.setEnabled(False)
         self.btn_pause_stopwatch.setEnabled(False)
         self.btn_stop_stopwatch.setEnabled(False)
@@ -740,131 +732,3 @@ class MainView(QMainWindow):
         self.combo_study_of.setCurrentIndex(0)
 
 
-class SystemTrayTimer:
-    def __init__(self, main_view):
-        self.main_view = main_view
-        self.app = QApplication.instance() or QApplication(sys.argv)
-
-        self.tray_icon = QSystemTrayIcon()
-        self.set_tray_icon(ico_toggle_timer_path)
-
-        self.tray_menu = QMenu()
-        self.time_action = QAction("00:00:00")
-        self.tray_menu.addAction(self.time_action)
-
-        self.start_stopwatch_action = QAction(
-            "Start Stopwatch", self.main_view)
-        self.start_stopwatch_action.triggered.connect(
-            self.main_view.start_stopwatch)
-        self.tray_menu.addAction(self.start_stopwatch_action)
-
-        self.pause_stopwatch_action = QAction(
-            "Pause Stopwatch", self.main_view)
-        self.pause_stopwatch_action.triggered.connect(
-            self.main_view.pause_stopwatch)
-        self.tray_menu.addAction(self.pause_stopwatch_action)
-
-        self.start_timer_action = QAction("Start Timer", self.main_view)
-        self.start_timer_action.triggered.connect(
-            self.main_view.start_countdown)
-        self.tray_menu.addAction(self.start_timer_action)
-
-        self.pause_timer_action = QAction("Pause Timer", self.main_view)
-        self.pause_timer_action.triggered.connect(
-            self.main_view.pause_countdown)
-        self.tray_menu.addAction(self.pause_timer_action)
-
-        self.reset_action = QAction("Reset", self.main_view)
-        self.reset_action.triggered.connect(self.reset)
-        self.tray_menu.addAction(self.reset_action)
-
-        self.exit_action = QAction("Exit", self.app)
-        self.exit_action.triggered.connect(self.app.quit)
-        self.tray_menu.addAction(self.exit_action)
-
-        self.tray_icon.setContextMenu(self.tray_menu)
-        self.tray_icon.show()
-
-    def reset(self):
-        self.main_view.reset_timer()
-        self.time_action.setText("00:00:00")
-
-    def set_tray_icon(self, icon_path):
-        pixmap = QPixmap(icon_path)
-        scaled_pixmap = pixmap.scaled(
-            64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-        icon = QIcon(scaled_pixmap)
-        self.tray_icon.setIcon(icon)
-
-    def update_display(self, elapsed_time):
-        hours = elapsed_time // 3600
-        minutes = (elapsed_time % 3600) // 60
-        seconds = elapsed_time % 60
-        time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
-        self.tray_icon.setToolTip(time_string)
-        self.time_action.setText(time_string)
-
-    def __init__(self, main_view):
-        self.main_view = main_view
-        self.app = QApplication.instance() or QApplication(sys.argv)
-
-        self.tray_icon = QSystemTrayIcon()
-        self.set_tray_icon(ico_toggle_timer_path)
-
-        self.tray_menu = QMenu()
-        self.time_action = QAction("00:00:00")
-        self.tray_menu.addAction(self.time_action)
-
-        self.start_stopwatch_action = QAction(
-            "Start Stopwatch", self.main_view)
-        self.start_stopwatch_action.triggered.connect(
-            self.main_view.start_stopwatch)
-        self.tray_menu.addAction(self.start_stopwatch_action)
-
-        self.pause_stopwatch_action = QAction(
-            "Pause Stopwatch", self.main_view)
-        self.pause_stopwatch_action.triggered.connect(
-            self.main_view.pause_stopwatch)
-        self.tray_menu.addAction(self.pause_stopwatch_action)
-
-        self.start_timer_action = QAction("Start Timer", self.main_view)
-        self.start_timer_action.triggered.connect(
-            self.main_view.start_countdown)
-        self.tray_menu.addAction(self.start_timer_action)
-
-        self.pause_timer_action = QAction("Pause Timer", self.main_view)
-        self.pause_timer_action.triggered.connect(
-            self.main_view.pause_countdown)
-        self.tray_menu.addAction(self.pause_timer_action)
-
-        self.reset_action = QAction("Reset", self.main_view)
-        self.reset_action.triggered.connect(self.reset)
-        self.tray_menu.addAction(self.reset_action)
-
-        self.exit_action = QAction("Exit", self.app)
-        self.exit_action.triggered.connect(self.app.quit)
-        self.tray_menu.addAction(self.exit_action)
-
-        self.tray_icon.setContextMenu(self.tray_menu)
-        self.tray_icon.show()
-
-    def reset(self):
-        self.main_view.reset_timer()
-        self.time_action.setText("00:00:00")
-
-    def set_tray_icon(self, icon_path):
-        pixmap = QPixmap(icon_path)
-        scaled_pixmap = pixmap.scaled(
-            64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-        icon = QIcon(scaled_pixmap)
-        self.tray_icon.setIcon(icon)
-
-    def update_display(self, elapsed_time):
-        hours = elapsed_time // 3600
-        minutes = (elapsed_time % 3600) // 60
-        seconds = elapsed_time % 60
-        time_string = f"{hours:02}:{minutes:02}:{seconds:02}"
-        self.tray_icon.setToolTip(time_string)
-        self.time_action.setText(time_string)
