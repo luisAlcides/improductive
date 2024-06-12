@@ -71,6 +71,8 @@ ico_toggle_timer_path = os.path.join(
     script_directory, "icons", "toggle_timer.png")
 ico_timer_path = os.path.join(script_directory, "icons", "timer.png")
 ico_clear_path = os.path.join(script_directory, "icons", "clear.png")
+ico_add_in_format_timer = os.path.join(
+    script_directory, 'icons', 'ico_add_format_timer.png')
 
 # Sound path
 sound_path = os.path.join(script_directory, "sounds", "sound_timer.mp3")
@@ -231,6 +233,8 @@ class MainView(QMainWindow):
         )
         self.timer_action = QAction(QIcon(ico_timer_path), "Timer", self)
         clear_action = QAction(QIcon(ico_clear_path), "Clear", self)
+        add_in_format_timer = QAction(
+            QIcon(ico_add_in_format_timer), "Add in format timer", self)
 
         add_habit_action.triggered.connect(self.add_habit_category)
         add_goal_action.triggered.connect(self.add_goal)
@@ -239,6 +243,7 @@ class MainView(QMainWindow):
         self.toggle_timer_action.triggered.connect(self.toggle_stopwatch)
         self.timer_action.triggered.connect(self.set_timer_goal)
         clear_action.triggered.connect(self.clear_timer_stopwatch)
+        add_in_format_timer.triggered.connect(self.add_in_format_timer)
 
         toolbar.addActions(
             [
@@ -249,6 +254,7 @@ class MainView(QMainWindow):
                 self.toggle_timer_action,
                 self.timer_action,
                 clear_action,
+                add_in_format_timer
             ]
         )
 
@@ -462,7 +468,6 @@ class MainView(QMainWindow):
         self.input_minutes_study.setText(
             self.remaining_time.toString("hh:mm:ss"))
 
-
     def save_study_time_for_timer(self):
         try:
             name_habit = self.combo_study_of.currentText()
@@ -471,6 +476,7 @@ class MainView(QMainWindow):
                 if self.required_study_time is not None
                 else 0
             ) * 60
+            from_input = float(from_input)
             model = AddHabitTimeModel(name_habit, from_input)
             self.study_day.add_habit(model)
             self.clear_timer_stopwatch()
@@ -528,6 +534,7 @@ class MainView(QMainWindow):
             from_input = self.input_minutes_study.text().strip().split(":")
             hours, minutes, seconds = map(int, from_input)
             study_time = hours * 60 + minutes + seconds / 60
+            study_time = float(study_time)
             model = AddHabitTimeModel(name_habit, study_time)
             self.study_day.add_habit(model)
             self.clear_timer_stopwatch()
@@ -548,6 +555,7 @@ class MainView(QMainWindow):
         self.btn_stop_stopwatch.setEnabled(False)
         self.btn_pause_stopwatch.setEnabled(False)
         self.disconnect_signals_btn()
+        self.clear_fields()
 
     def reset_timer(self):
         self.elapsed_time = 0
@@ -602,6 +610,7 @@ class MainView(QMainWindow):
         model = AddHabitTimeModel(name_habit, study_time)
         self.study_day.add_habit(model)
         clean_fields(fields)
+        self.play_sound()
         self.refresh()
         self.habit_time.emit()
         self.montly_schedule_signal.emit()
@@ -612,6 +621,7 @@ class MainView(QMainWindow):
         self.montly_schedule.trigger_data_update()
         self.update_chart()
         self.chart_view.update_chart()
+        self.clear_fields()
 
     def update_chart(self):
         self.table_goal_data = data_of_table_all(self.table_goal)
@@ -730,5 +740,26 @@ class MainView(QMainWindow):
     def clear_fields(self):
         self.input_minutes_study.clear()
         self.combo_study_of.setCurrentIndex(0)
+        self.btn_add.clicked.disconnect()
+        self.btn_add.clicked.connect(self.add_habit_time)
+        self.input_minutes_study.setPlaceholderText('In minutes')
 
+    def add_in_format_timer(self):
+        self.input_minutes_study.setPlaceholderText('hh:mm:ss')
+        self.btn_add.clicked.disconnect()
+        self.btn_add.clicked.connect(self.add_habit_time_in_format_timer)
 
+    def add_habit_time_in_format_timer(self):
+        try:
+            name_habit = self.combo_study_of.currentText()
+            from_input = self.input_minutes_study.text().strip().split(":")
+            hours, minutes, seconds = map(int, from_input)
+            study_time = hours * 60 + minutes + seconds / 60
+            study_time = float(study_time)
+            model = AddHabitTimeModel(name_habit, study_time)
+            self.study_day.add_habit(model)
+            message("Study time saved successfully")
+            self.play_sound()
+            self.refresh()
+        except Exception as e:
+            print(f"Error to save study time for stopwatch: {e}")
